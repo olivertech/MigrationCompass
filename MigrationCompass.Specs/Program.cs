@@ -37,7 +37,8 @@ internal sealed class SpecSuite
 
     private static Task TestFrameworkClassificationAsync()
     {
-        AssertEqual(".NET Framework 4.x", ProjectClassification.Classify(["net48"]).Classification, "net48");
+        AssertEqual(".NET Framework 3.x-4.x", ProjectClassification.Classify(["net48"]).Classification, "net48");
+        AssertEqual(".NET Framework 3.x-4.x", ProjectClassification.Classify(["net35"]).Classification, "net35");
         AssertEqual(".NET Core 2.x/3.x", ProjectClassification.Classify(["netcoreapp3.1"]).Classification, "netcoreapp3.1");
         AssertEqual(".NET 5-7", ProjectClassification.Classify(["net6.0"]).Classification, "net6.0");
         AssertEqual(".NET 8-9", ProjectClassification.Classify(["net8.0"]).Classification, "net8.0");

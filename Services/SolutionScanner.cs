@@ -69,7 +69,7 @@ public sealed class SolutionScanner
                         .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
                         .ToArray();
                 }
-                catch (Exception ex) when (ex is InvalidProjectFileException or ArgumentException or InvalidOperationException or TypeInitializationException)
+                catch (Exception)
                 {
                     var fallback = ParseProjectWithoutEvaluation(projectPath);
                     targetFrameworks = fallback.TargetFrameworks;
@@ -112,12 +112,26 @@ public sealed class SolutionScanner
         }
 
         var multiple = project.GetPropertyValue("TargetFrameworks");
+        if (!string.IsNullOrWhiteSpace(multiple))
+        {
+            return multiple.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        var legacyFramework = NormalizeLegacyFramework(
+            project.GetPropertyValue("TargetFrameworkVersion"),
+            project.GetPropertyValue("TargetFrameworkProfile"));
+
+        if (!string.IsNullOrWhiteSpace(legacyFramework))
+        {
+            return [legacyFramework];
+        }
+
         if (string.IsNullOrWhiteSpace(multiple))
         {
             return ["desconhecido"];
         }
 
-        return multiple.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return ["desconhecido"];
     }
 
     /// <summary>
@@ -183,7 +197,20 @@ public sealed class SolutionScanner
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .ToArray();
 
-        var frameworks = targetFramework.Concat(targetFrameworks).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var legacyFrameworkVersion = root
+            .Descendants(ns + "TargetFrameworkVersion")
+            .Select(element => NormalizeLegacyFramework(
+                element.Value,
+                root.Descendants(ns + "TargetFrameworkProfile").Select(profile => profile.Value).FirstOrDefault()))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Cast<string>()
+            .ToArray();
+
+        var frameworks = targetFramework
+            .Concat(targetFrameworks)
+            .Concat(legacyFrameworkVersion)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         if (frameworks.Length == 0)
         {
             frameworks = ["desconhecido"];
@@ -239,6 +266,47 @@ public sealed class SolutionScanner
     {
         var assemblyLocation = Assembly.GetExecutingAssembly().Location;
         return string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation);
+    }
+
+    private static string? NormalizeLegacyFramework(string? version, string? profile)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return null;
+        }
+
+        var normalizedVersion = version.Trim().TrimStart('v', 'V');
+        var moniker = normalizedVersion switch
+        {
+            "3.0" => "net30",
+            "3.5" => "net35",
+            "4.0" => "net40",
+            "4.5" => "net45",
+            "4.5.1" => "net451",
+            "4.5.2" => "net452",
+            "4.6" => "net46",
+            "4.6.1" => "net461",
+            "4.6.2" => "net462",
+            "4.7" => "net47",
+            "4.7.1" => "net471",
+            "4.7.2" => "net472",
+            "4.8" => "net48",
+            "4.8.1" => "net481",
+            _ => null
+        };
+
+        if (moniker is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(profile))
+        {
+            return moniker;
+        }
+
+        var normalizedProfile = profile.Trim().Replace(" ", string.Empty).ToLowerInvariant();
+        return $"{moniker}-{normalizedProfile}";
     }
 
     private sealed record FallbackProjectData(

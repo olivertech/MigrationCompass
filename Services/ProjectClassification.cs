@@ -28,13 +28,13 @@ public static class ProjectClassification
     private static ProjectMigrationProfile ClassifySingle(string tfm)
     {
         var normalized = tfm.Trim().ToLowerInvariant();
-        if (normalized.StartsWith("net4", StringComparison.Ordinal))
+        if (normalized.StartsWith("net3", StringComparison.Ordinal) || normalized.StartsWith("net4", StringComparison.Ordinal))
         {
             return new ProjectMigrationProfile
             {
-                Classification = ".NET Framework 4.x",
+                Classification = ".NET Framework 3.x-4.x",
                 Impact = "Alto",
-                Summary = "Projeto legado em .NET Framework 4.x com maior distancia estrutural para .NET 10.",
+                Summary = "Projeto legado em .NET Framework 3.x ou 4.x com alta distancia estrutural para .NET 10.",
                 Weight = 4
             };
         }
