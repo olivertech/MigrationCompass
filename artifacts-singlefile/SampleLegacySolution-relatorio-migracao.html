@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <title>Relatorio de Migracao: SampleLegacySolution</title>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 20px; color: #1b1b1b; }
+    .risk-score { font-size: 2.2em; font-weight: bold; margin: 12px 0; }
+    .blocker { border-left: 4px solid #d32f2f; padding-left: 12px; margin: 16px 0; }
+    .warning { border-left: 4px solid #f57c00; padding-left: 12px; margin: 16px 0; }
+    .info { border-left: 4px solid #388e3c; padding-left: 12px; margin: 16px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+    th { background-color: #f2f2f2; }
+    .muted { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Relatorio de Compatibilidade de Migracao para .NET 10 LTS</h1>
+  <p><strong>Solution:</strong> SampleLegacySolution.sln</p>
+  <p><strong>Horario do Scan:</strong> 2026-08-03 00:17:24</p>
+  <div class="risk-score">Pontuacao de Risco: 100/100</div>
+  <p class="muted">Maior pontuacao indica mais bloqueadores exigindo atencao imediata antes da migracao para .NET 10.</p>
+  <h2>Bloqueadores Criticos</h2>
+  <table>
+    <thead><tr><th>Projeto</th><th>Problema</th><th>Impacto</th><th>Esforco</th><th>Sugestao de Correcao</th></tr></thead>
+    <tbody>
+      <tr><td>Legacy.Web</td><td>System.Web.HttpContext.Current (WEB001)</td><td>Alto</td><td>Medio</td><td>Use IHttpContextAccessor (Microsoft.AspNetCore.Http) ou refatore para servico sem estado</td></tr>
+      <tr><td>Legacy.Web</td><td>System.Web.Security.FormsAuthentication (SEC006)</td><td>Alto</td><td>Alto</td><td>Use autenticacao por cookies do ASP.NET Core ou ASP.NET Core Identity</td></tr>
+      <tr><td>Legacy.Web</td><td>Elmah (1.2.2)</td><td>Alto</td><td>Medio</td><td>Nenhuma versao estavel compativel com .NET 10 foi encontrada para Elmah. Avaliar substituicao.</td></tr>
+    </tbody>
+  </table>
+  <h2>Resumo Executivo</h2>
+  <ul>
+    <li>Projetos Escaneados: 3</li>
+    <li>Bloqueadores Criticos: 3</li>
+    <li>Avisos: 1</li>
+    <li>Informacoes: 1</li>
+  </ul>
+  <h2>Projetos Avaliados</h2>
+  <table>
+    <thead><tr><th>Projeto</th><th>TFM Atual</th><th>Classificacao</th><th>Impacto Base</th><th>Resumo</th></tr></thead>
+    <tbody>
+      <tr><td>Bridge.Library</td><td>net6.0</td><td>.NET 5-7</td><td>Medio</td><td>Projeto ja no ecossistema unificado, mas ainda requer revisao de breaking changes e dependencias.</td></tr>
+      <tr><td>Legacy.Web</td><td>net48</td><td>.NET Framework 4.x</td><td>Alto</td><td>Projeto legado em .NET Framework 4.x com maior distancia estrutural para .NET 10.</td></tr>
+      <tr><td>Modern.Service</td><td>net9.0</td><td>.NET 8-9</td><td>Baixo</td><td>Projeto proximo do alvo .NET 10, mantendo o scanner para dependencias, APIs e ajustes finais.</td></tr>
+    </tbody>
+  </table>
+  <h2>Avisos e Observacoes</h2>
+  <div class="info"><strong>Modern.Service - Newtonsoft.Json</strong><br>Compativel<br><span class="muted">A versao 13.0.3 possui assets compativeis com .NET 10.</span></div>
+  <p><em>Gerado pelo MigrationCompass v3.0.0 - Execute com --help para detalhes. Ultima atualizacao: Agosto/2026</em></p>
+</body>
+</html>

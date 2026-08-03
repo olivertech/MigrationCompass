@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+using System.Reflection;
+using System.Text.Json;
 using MigrationCompass.Models;
 
 namespace MigrationCompass.Services;
@@ -9,11 +10,11 @@ namespace MigrationCompass.Services;
 public static class RuleCatalog
 {
     /// <summary>
-    /// Desserializa o arquivo de regras preservando tolerÃ¢ncia a variaÃ§Ãµes de casing no JSON.
+    /// Desserializa o arquivo de regras a partir de um arquivo fÃ­sico ou de um recurso embutido no assembly.
     /// </summary>
-    public static async Task<IReadOnlyList<ApiRule>> LoadAsync(string path, CancellationToken cancellationToken)
+    public static async Task<IReadOnlyList<ApiRule>> LoadAsync(string? path, CancellationToken cancellationToken)
     {
-        await using var stream = File.OpenRead(path);
+        await using var stream = OpenRulesStream(path);
         var rules = await JsonSerializer.DeserializeAsync<List<ApiRule>>(
             stream,
             new JsonSerializerOptions
@@ -21,6 +22,30 @@ public static class RuleCatalog
                 PropertyNameCaseInsensitive = true
             },
             cancellationToken);
+
         return rules ?? [];
+    }
+
+    /// <summary>
+    /// Resolve o stream das regras priorizando arquivo fÃ­sico e usando recurso embutido como fallback para publish single-file.
+    /// </summary>
+    private static Stream OpenRulesStream(string? path)
+    {
+        if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+        {
+            return File.OpenRead(path);
+        }
+
+        var assembly = Assembly.GetExecutingAssembly();
+        const string resourceName = "MigrationCompass.Rules.BlockingRules.json";
+        var resourceStream = assembly.GetManifestResourceStream(resourceName);
+        if (resourceStream is not null)
+        {
+            return resourceStream;
+        }
+
+        throw new FileNotFoundException(
+            "Nao foi possivel localizar o arquivo ou recurso embutido das regras de bloqueio.",
+            path ?? resourceName);
     }
 }

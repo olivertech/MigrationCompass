@@ -69,6 +69,7 @@ public static class MsBuildEnvironment
         var sdkDirectory = Path.Combine(sdkRoot, version);
         _sdkDirectory = sdkDirectory;
         var sdksPath = Path.Combine(sdkDirectory, "Sdks");
+        var msbuildAssemblyPath = Path.Combine(sdkDirectory, "MSBuild.dll");
         if (Directory.Exists(sdksPath))
         {
             Environment.SetEnvironmentVariable("MSBuildSDKsPath", sdksPath);
@@ -79,6 +80,11 @@ public static class MsBuildEnvironment
             Environment.SetEnvironmentVariable("MSBuildBinPath", sdkDirectory);
             Environment.SetEnvironmentVariable("RoslynTargetsPath", sdkDirectory);
             Environment.SetEnvironmentVariable("MSBuildEnableWorkloadResolver", "false");
+
+            if (File.Exists(msbuildAssemblyPath))
+            {
+                Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH", msbuildAssemblyPath);
+            }
         }
 
         _configured = true;

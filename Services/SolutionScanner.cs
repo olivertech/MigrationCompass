@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+using System.Reflection;
+using System.Xml.Linq;
 using Microsoft.Build.Construction;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Exceptions;
@@ -7,21 +8,21 @@ using MigrationCompass.Models;
 namespace MigrationCompass.Services;
 
 /// <summary>
-/// Descobre os projetos de uma solution e extrai os metadados necessÃ¡rios para a anÃ¡lise de migraÃ§Ã£o.
+/// Descobre os projetos de uma solution e extrai os metadados necessarios para a analise de migracao.
 /// </summary>
 public sealed class SolutionScanner
 {
     /// <summary>
-    /// Executa a leitura da solution, carregando projetos via MSBuild e usando fallback em XML quando necessÃ¡rio.
+    /// Executa a leitura da solution, carregando projetos via MSBuild quando possivel e usando fallback em XML quando necessario.
     /// </summary>
     public async Task<SolutionScanResult> ScanAsync(ScanRequest request, CancellationToken cancellationToken)
     {
         await Task.Yield();
         MsBuildEnvironment.Configure();
 
+        var preferXmlFallback = IsSingleFileExecution();
         var solution = SolutionFile.Parse(request.SolutionPath);
         var solutionDirectory = Path.GetDirectoryName(request.SolutionPath) ?? Directory.GetCurrentDirectory();
-        var projectCollection = new ProjectCollection();
         var globalProperties = MsBuildEnvironment.CreateGlobalProperties();
 
         var result = new SolutionScanResult
@@ -47,23 +48,34 @@ public sealed class SolutionScanner
             IReadOnlyList<PackageReferenceInfo> packages;
             IReadOnlyList<string> references;
 
-            try
-            {
-                var project = projectCollection.LoadProject(projectPath, globalProperties, "Current");
-                targetFrameworks = ExtractTargetFrameworks(project);
-                packages = ExtractPackageReferences(projectPath, project);
-                references = project.GetItems("Reference")
-                    .Select(item => item.EvaluatedInclude)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-            }
-            catch (InvalidProjectFileException)
+            if (preferXmlFallback)
             {
                 var fallback = ParseProjectWithoutEvaluation(projectPath);
                 targetFrameworks = fallback.TargetFrameworks;
                 packages = fallback.PackageReferences;
                 references = fallback.References;
+            }
+            else
+            {
+                try
+                {
+                    using var projectCollection = new ProjectCollection();
+                    var project = projectCollection.LoadProject(projectPath, globalProperties, "Current");
+                    targetFrameworks = ExtractTargetFrameworks(project);
+                    packages = ExtractPackageReferences(projectPath, project);
+                    references = project.GetItems("Reference")
+                        .Select(item => item.EvaluatedInclude)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                }
+                catch (Exception ex) when (ex is InvalidProjectFileException or ArgumentException or InvalidOperationException or TypeInitializationException)
+                {
+                    var fallback = ParseProjectWithoutEvaluation(projectPath);
+                    targetFrameworks = fallback.TargetFrameworks;
+                    packages = fallback.PackageReferences;
+                    references = fallback.References;
+                }
             }
 
             var profile = ProjectClassification.Classify(targetFrameworks);
@@ -89,7 +101,7 @@ public sealed class SolutionScanner
     }
 
     /// <summary>
-    /// Extrai TFMs simples ou mÃºltiplos a partir do projeto jÃ¡ avaliado pelo MSBuild.
+    /// Extrai TFMs simples ou multiplos a partir do projeto ja avaliado pelo MSBuild.
     /// </summary>
     private static IReadOnlyList<string> ExtractTargetFrameworks(Project project)
     {
@@ -109,7 +121,7 @@ public sealed class SolutionScanner
     }
 
     /// <summary>
-    /// Coleta dependÃªncias diretas declaradas no projeto e em packages.config.
+    /// Coleta dependencias diretas declaradas no projeto e em packages.config.
     /// </summary>
     private static IReadOnlyList<PackageReferenceInfo> ExtractPackageReferences(string projectPath, Project project)
     {
@@ -151,7 +163,7 @@ public sealed class SolutionScanner
     }
 
     /// <summary>
-    /// Usa leitura XML direta quando a avaliaÃ§Ã£o completa do projeto nÃ£o Ã© possÃ­vel no runtime atual.
+    /// Usa leitura XML direta quando a avaliacao completa do projeto nao e possivel no runtime atual.
     /// </summary>
     private static FallbackProjectData ParseProjectWithoutEvaluation(string projectPath)
     {
@@ -221,6 +233,12 @@ public sealed class SolutionScanner
                 .OrderBy(package => package.PackageId, StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
             references);
+    }
+
+    private static bool IsSingleFileExecution()
+    {
+        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+        return string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation);
     }
 
     private sealed record FallbackProjectData(

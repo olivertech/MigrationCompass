@@ -13,9 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Rules\BlockingRules.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="Rules\BlockingRules.json" />
   </ItemGroup>
 
   <ItemGroup>
