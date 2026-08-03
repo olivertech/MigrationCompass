@@ -1,181 +1,163 @@
 ﻿# MigrationCompass
 
-O `MigrationCompass` Ã© uma ferramenta de anÃ¡lise tÃ©cnica criada para apoiar programas de modernizaÃ§Ã£o de aplicaÃ§Ãµes `.NET`. Seu propÃ³sito Ã© identificar riscos, bloqueadores e esforÃ§os de migraÃ§Ã£o em soluÃ§Ãµes legadas, gerando um relatÃ³rio HTML executivo voltado Ã  tomada de decisÃ£o.
+O `MigrationCompass` &eacute; uma ferramenta de console em `.NET 10` para an&aacute;lise t&eacute;cnica de solu&ccedil;&otilde;es legadas. O projeto foi criado para apoiar jornadas de migra&ccedil;&atilde;o para `.NET 10`, identificando riscos, depend&ecirc;ncias incompat&iacute;veis, APIs cr&iacute;ticas e o esfor&ccedil;o t&eacute;cnico associado.
 
-ConstruÃ­do em `.NET 10`, o projeto combina leitura de solutions, classificaÃ§Ã£o de projetos, anÃ¡lise de dependÃªncias e detecÃ§Ã£o de APIs legadas para oferecer uma visÃ£o estruturada da jornada de migraÃ§Ã£o para a plataforma alvo.
+Este README apresenta a vis&atilde;o t&eacute;cnica e detalhada da solu&ccedil;&atilde;o. Para uma vers&atilde;o institucional voltada a stakeholders e recrutadores t&eacute;cnicos, consulte `README.institucional.md`.
 
-## Proposta de Valor
+## Objetivo
 
-Em iniciativas de modernizaÃ§Ã£o, uma das maiores dificuldades nÃ£o Ã© apenas migrar cÃ³digo, mas entender com clareza:
+O foco do `MigrationCompass` &eacute; executar uma avalia&ccedil;&atilde;o local e objetiva sobre uma solution `.NET`, produzindo um relat&oacute;rio HTML que ajude equipes t&eacute;cnicas e lideran&ccedil;as a responder:
 
-- onde estÃ£o os maiores riscos tÃ©cnicos
-- quais dependÃªncias podem comprometer cronograma e custo
-- quais projetos exigirÃ£o refatoraÃ§Ãµes mais profundas
-- como comunicar esse cenÃ¡rio para lideranÃ§a tÃ©cnica e executiva
+- quais projetos est&atilde;o mais distantes do alvo `.NET 10`
+- quais depend&ecirc;ncias podem bloquear a moderniza&ccedil;&atilde;o
+- quais APIs exigir&atilde;o refatora&ccedil;&atilde;o
+- qual &eacute; o risco agregado da solution
 
-O `MigrationCompass` foi desenhado para responder exatamente a essas perguntas com uma abordagem:
+## Escopo Atual
 
-- local-first
-- objetiva
-- auditÃ¡vel
-- orientada a decisÃ£o
+A vers&atilde;o atual do projeto j&aacute; implementa:
 
-## VisÃ£o do Produto
+- descoberta de solution e projetos `.csproj`
+- leitura de `TargetFramework` e `TargetFrameworks`
+- leitura de `PackageReference`, `Reference` e `packages.config`
+- classifica&ccedil;&atilde;o de projetos pela dist&acirc;ncia at&eacute; `.NET 10`
+- scanner de APIs legadas baseado em regras JSON
+- verifica&ccedil;&atilde;o de compatibilidade de pacotes via `api.nuget.org`
+- fallback offline para cen&aacute;rios sem acesso &agrave; internet
+- gera&ccedil;&atilde;o de relat&oacute;rio HTML com vis&atilde;o executiva
+- su&iacute;te local de valida&ccedil;&atilde;o sem frameworks de teste adicionais
 
-O projeto nasce como um scanner tÃ©cnico para avaliaÃ§Ã£o prÃ©-migraÃ§Ã£o de soluÃ§Ãµes `.NET`, com foco em ambientes corporativos onde seguranÃ§a, rastreabilidade e simplicidade operacional sÃ£o fatores crÃ­ticos.
+## Arquitetura
 
-Em vez de depender de painÃ©is externos ou fluxos distribuÃ­dos, o `MigrationCompass` concentra a anÃ¡lise em uma execuÃ§Ã£o local, produzindo um artefato final que pode ser compartilhado com:
+### Fluxo principal
 
-- arquitetos de software
-- tech leads
-- gerentes de modernizaÃ§Ã£o
-- sponsors de transformaÃ§Ã£o digital
-- recrutadores tÃ©cnicos interessados em arquitetura, tooling e engenharia de plataforma
+O fluxo da aplica&ccedil;&atilde;o segue a sequ&ecirc;ncia abaixo:
 
-## Diferenciais
+1. A CLI recebe os par&acirc;metros de entrada.
+2. A solution &eacute; localizada e os projetos `.csproj` s&atilde;o descobertos.
+3. Cada projeto &eacute; classificado por TFM.
+4. As depend&ecirc;ncias e refer&ecirc;ncias s&atilde;o coletadas.
+5. Os arquivos `.cs` s&atilde;o analisados com regras de APIs legadas.
+6. Os pacotes NuGet s&atilde;o avaliados quanto &agrave; compatibilidade com `.NET 10`.
+7. Os achados s&atilde;o consolidados em um relat&oacute;rio HTML.
 
-- ExecuÃ§Ã£o local sem dependÃªncia de plataforma SaaS
-- RelatÃ³rio HTML pronto para consumo executivo
-- Foco em migraÃ§Ã£o para `.NET 10`
-- Compatibilidade com cenÃ¡rios legados e hÃ­bridos
-- Estrutura simples, objetiva e fÃ¡cil de evoluir
+### Componentes centrais
 
-## Principais Capacidades
+- `Program.cs`
+  - orquestra a execu&ccedil;&atilde;o ponta a ponta
+  - valida argumentos
+  - resolve a solution
+  - dispara scanners e o gerador de relat&oacute;rio
 
-### Descoberta de solution e projetos
+- `Services/SolutionScanner.cs`
+  - descobre projetos na solution
+  - extrai TFMs, refer&ecirc;ncias e depend&ecirc;ncias
+  - tenta usar `Microsoft.Build`
+  - utiliza fallback em XML quando a avalia&ccedil;&atilde;o completa do projeto falha
 
-- leitura de arquivo `.sln` informado pela CLI
-- descoberta automÃ¡tica de `*.sln` no diretÃ³rio atual quando aplicÃ¡vel
-- anÃ¡lise restrita a projetos `.csproj`
-- exclusÃ£o de tipos nÃ£o suportados como `.vcxproj` e `.fsproj`
+- `Services/ApiScanner.cs`
+  - percorre arquivos `.cs`
+  - aplica regras regex vindas de `Rules/BlockingRules.json`
 
-### ClassificaÃ§Ã£o de maturidade de migraÃ§Ã£o
+- `Services/NuGetChecker.cs`
+  - consulta o feed do NuGet
+  - avalia compatibilidade de pacotes com `.NET 10`
+  - trata indisponibilidade remota como aviso offline
 
-Os projetos sÃ£o classificados segundo sua distÃ¢ncia estrutural atÃ© `.NET 10`:
+- `Reporting/HtmlReportGenerator.cs`
+  - gera o relat&oacute;rio final em HTML com CSS inline
 
-- `.NET Framework 4.x`
-- `.NET Core 2.x / 3.x`
-- `.NET 5 / 6 / 7`
-- `.NET 8 / 9`
-- `.NET 10`
+## Classifica&ccedil;&atilde;o de Projetos
 
-Essa classificaÃ§Ã£o ajuda a traduzir detalhe tÃ©cnico em leitura executiva de impacto.
+Os projetos s&atilde;o classificados conforme o risco estrutural da migra&ccedil;&atilde;o para `.NET 10`:
 
-### Leitura de dependÃªncias
+- `.NET Framework 4.x` = risco base alto
+- `.NET Core 2.x / 3.x` = risco alto
+- `.NET 5 / 6 / 7` = risco m&eacute;dio
+- `.NET 8 / 9` = risco menor, mas ainda eleg&iacute;veis ao scanner
+- `.NET 10` = refer&ecirc;ncia informativa
 
-O scanner coleta:
+Essa classifica&ccedil;&atilde;o alimenta o contexto executivo do relat&oacute;rio e ajuda na prioriza&ccedil;&atilde;o da moderniza&ccedil;&atilde;o.
 
-- `PackageReference`
-- `Reference`
-- `packages.config`
+## Scanner de APIs Legadas
 
-Isso permite mapear dependÃªncias modernas e legadas no mesmo ecossistema.
-
-### DetecÃ§Ã£o de APIs legadas
-
-O catÃ¡logo de regras embutido detecta APIs historicamente sensÃ­veis em jornadas de modernizaÃ§Ã£o, como:
+O cat&aacute;logo de regras est&aacute; armazenado em `Rules/BlockingRules.json` e cont&eacute;m regras curadas para identificar pontos cl&aacute;ssicos de ruptura em migra&ccedil;&otilde;es, como:
 
 - `System.Web.HttpContext.Current`
 - `System.Web.Security.FormsAuthentication`
 - `System.ServiceModel.*`
 - `System.Configuration.ConfigurationManager.AppSettings`
 
-Cada ocorrÃªncia Ã© enriquecida com:
+Cada ocorr&ecirc;ncia registrada inclui:
 
 - identificador da regra
+- categoria
 - impacto
-- esforÃ§o estimado
+- esfor&ccedil;o estimado
 - alternativa sugerida
-- referÃªncia de documentaÃ§Ã£o
+- link de documenta&ccedil;&atilde;o
 
-### VerificaÃ§Ã£o de compatibilidade de pacotes
+## Compatibilidade de Pacotes
 
-Quando hÃ¡ acesso ao `api.nuget.org`, o `MigrationCompass` avalia a compatibilidade de pacotes com `.NET 10` por meio da anÃ¡lise de assets e frameworks suportados.
+O scanner analisa pacotes diretos do projeto e pacotes vindos de `packages.config`.
 
-Em ambientes sem acesso externo:
+Quando o acesso ao `api.nuget.org` est&aacute; dispon&iacute;vel:
 
-- a execuÃ§Ã£o continua normalmente
-- o relatÃ³rio Ã© gerado
-- os pacotes sÃ£o marcados como `Nao verificado offline`
+- vers&otilde;es publicadas s&atilde;o consultadas
+- assets do pacote s&atilde;o avaliados
+- a compatibilidade com `.NET 10` &eacute; inferida por framework suportado
 
-### RelatÃ³rio executivo em HTML
+Quando o ambiente est&aacute; offline:
 
-O artefato final Ã© um relatÃ³rio autocontido com:
+- a execu&ccedil;&atilde;o continua
+- o pacote &eacute; marcado como `Nao verificado offline`
+- o relat&oacute;rio preserva a rastreabilidade da limita&ccedil;&atilde;o
 
-- visÃ£o executiva da solution
-- pontuaÃ§Ã£o de risco
-- bloqueadores crÃ­ticos
-- avisos e observaÃ§Ãµes
-- resumo por projeto
+## Relat&oacute;rio HTML
 
-Esse formato foi pensado para leitura rÃ¡pida por pÃºblicos tÃ©cnicos e nÃ£o tÃ©cnicos.
+O relat&oacute;rio gerado cont&eacute;m:
 
-## PÃºblico-Alvo
+- vis&atilde;o geral da solution
+- data e hora do scan
+- pontua&ccedil;&atilde;o de risco
+- tabela de bloqueadores cr&iacute;ticos
+- avisos e observa&ccedil;&otilde;es
+- resumo dos projetos analisados
 
-O projeto Ã© especialmente relevante para:
+### F&oacute;rmula de risco
 
-- arquitetos de software
-- especialistas em modernizaÃ§Ã£o
-- tech leads
-- engenheiros de plataforma
-- consultores de transformaÃ§Ã£o digital
-- recrutadores tÃ©cnicos que desejam avaliar repertÃ³rio em anÃ¡lise de legado, tooling interno e arquitetura .NET
+```text
+((BloqueadoresCriticos * 12) + (Avisos * 6)) / TotalProjetos * 10
+```
 
-## Stack TÃ©cnica
+Regras:
+
+- o valor m&aacute;ximo &eacute; `100`
+- impactos `Alto` contam como bloqueadores cr&iacute;ticos
+- impactos `Medio` e `Baixo` contam como avisos
+
+## Estrutura do Reposit&oacute;rio
+
+```text
+MigrationCompass/
+|- MigrationCompass.csproj
+|- Program.cs
+|- README.md
+|- README.institucional.md
+|- Rules/
+|- Models/
+|- Services/
+|- Reporting/
+|- Fixtures/
+'\- MigrationCompass.Specs/
+```
+
+## Stack T&eacute;cnica
 
 - `.NET 10`
 - `Microsoft.Build 18.8.2`
 - `NuGet.Protocol 7.6.0`
 - `System.CommandLine 2.0.10`
-
-O projeto evita dependÃªncias desnecessÃ¡rias e privilegia uma arquitetura simples, extensÃ­vel e de fÃ¡cil manutenÃ§Ã£o.
-
-## Arquitetura da SoluÃ§Ã£o
-
-### NÃºcleo da aplicaÃ§Ã£o
-
-- `Program.cs`
-  - entrada da CLI
-  - coordenaÃ§Ã£o do fluxo de anÃ¡lise
-
-- `Services/SolutionScanner.cs`
-  - descoberta da solution
-  - leitura de projetos, TFMs e dependÃªncias
-  - fallback controlado por XML para cenÃ¡rios onde a avaliaÃ§Ã£o completa por `Microsoft.Build` nÃ£o esteja disponÃ­vel
-
-- `Services/ApiScanner.cs`
-  - varredura de cÃ³digo com regras regex
-
-- `Services/NuGetChecker.cs`
-  - verificaÃ§Ã£o de compatibilidade de pacotes
-  - tolerÃ¢ncia a cenÃ¡rios offline
-
-- `Reporting/HtmlReportGenerator.cs`
-  - geraÃ§Ã£o do relatÃ³rio HTML executivo
-
-- `Rules/BlockingRules.json`
-  - regras de bloqueio e orientaÃ§Ã£o de migraÃ§Ã£o
-
-### ValidaÃ§Ã£o local
-
-- `MigrationCompass.Specs/`
-  - suÃ­te executÃ¡vel de validaÃ§Ã£o
-  - garante cobertura dos fluxos essenciais sem adicionar frameworks extras
-
-## Estrutura do RepositÃ³rio
-
-```text
-MigrationCompass/
-â”œâ”€â”€ MigrationCompass.csproj
-â”œâ”€â”€ Program.cs
-â”œâ”€â”€ README.md
-â”œâ”€â”€ Rules/
-â”œâ”€â”€ Models/
-â”œâ”€â”€ Services/
-â”œâ”€â”€ Reporting/
-â”œâ”€â”€ Fixtures/
-â””â”€â”€ MigrationCompass.Specs/
-```
 
 ## Como Executar
 
@@ -191,54 +173,13 @@ dotnet run --project .\MigrationCompass.csproj -- --help
 dotnet run --project .\MigrationCompass.csproj -- --sln "C:\LegacyApps\MinhaSolucao.sln" --output ".\artifacts"
 ```
 
-### Comportamento padrÃ£o
+### Regras de resolu&ccedil;&atilde;o da solution
 
-- `--sln` Ã© opcional apenas se existir exatamente uma solution no diretÃ³rio atual
-- `--output` usa o diretÃ³rio atual por padrÃ£o
-- `--format` atualmente aceita apenas `html`
+- `--sln` &eacute; opcional apenas quando existe exatamente uma solution no diret&oacute;rio atual
+- se nenhuma solution for encontrada, a execu&ccedil;&atilde;o falha
+- se m&uacute;ltiplas solutions forem encontradas sem `--sln`, a execu&ccedil;&atilde;o falha
 
-## Exemplo de SaÃ­da
-
-O relatÃ³rio Ã© salvo como:
-
-```text
-<output>\<NomeDaSolution>-relatorio-migracao.html
-```
-
-Exemplo:
-
-```text
-artifacts\SampleLegacySolution-relatorio-migracao.html
-```
-
-## PontuaÃ§Ã£o de Risco
-
-A pontuaÃ§Ã£o de risco atual segue a fÃ³rmula:
-
-```text
-((BloqueadoresCriticos * 12) + (Avisos * 6)) / TotalProjetos * 10
-```
-
-Regras aplicadas:
-
-- pontuaÃ§Ã£o mÃ¡xima de `100`
-- itens com impacto `Alto` contam como bloqueadores crÃ­ticos
-- itens com impacto `Medio` ou `Baixo` contam como avisos
-
-## ExecuÃ§Ã£o em Ambientes Restritos
-
-O `MigrationCompass` foi pensado para ambientes corporativos restritos.
-
-Se o `api.nuget.org` nÃ£o estiver acessÃ­vel:
-
-- o scan de projetos continua
-- o scan de APIs continua
-- o relatÃ³rio HTML continua sendo gerado
-- a compatibilidade de pacotes passa para `Nao verificado offline`
-
-## ValidaÃ§Ã£o do Projeto
-
-O projeto possui um runner leve de testes locais.
+## Valida&ccedil;&atilde;o Local
 
 ### Build
 
@@ -246,79 +187,35 @@ O projeto possui um runner leve de testes locais.
 dotnet build .\MigrationCompass.csproj
 ```
 
-### Executar testes locais
+### Executar os testes locais
 
 ```powershell
 dotnet run --project .\MigrationCompass.Specs\MigrationCompass.Specs.csproj
 ```
 
-### Executar o scan da fixture de exemplo
+### Executar o scan da fixture local
 
 ```powershell
 dotnet run --project .\MigrationCompass.csproj -- --sln ".\Fixtures\SampleLegacySolution\SampleLegacySolution.sln" --output ".\artifacts"
 ```
 
-## Estado Atual
+## Limita&ccedil;&otilde;es Atuais
 
-O projeto jÃ¡ possui um MVP funcional com:
+- suporte apenas a projetos `.csproj`
+- sa&iacute;da apenas em HTML
+- aus&ecirc;ncia de corre&ccedil;&otilde;es autom&aacute;ticas
+- aus&ecirc;ncia de integra&ccedil;&atilde;o com pipeline CI/CD
+- scanner de APIs baseado em regex
+- an&aacute;lise de compatibilidade NuGet depende de metadados remotos quando online
 
-- descoberta de solution
-- classificaÃ§Ã£o de projetos por TFM
-- leitura de dependÃªncias
-- scanner de APIs legadas
-- verificaÃ§Ã£o NuGet com fallback offline
-- geraÃ§Ã£o de relatÃ³rio HTML
-- validaÃ§Ã£o automatizada local
+## Pr&oacute;ximas Evolu&ccedil;&otilde;es
 
-## LimitaÃ§Ãµes Atuais
+- exporta&ccedil;&atilde;o em JSON ou CSV
+- expans&atilde;o do cat&aacute;logo de regras
+- an&aacute;lise mais profunda de depend&ecirc;ncias transitivas
+- compara&ccedil;&atilde;o hist&oacute;rica entre scans
+- modo opcional com an&aacute;lise sem&acirc;ntica via Roslyn
 
-Como todo MVP tÃ©cnico, esta versÃ£o ainda possui limites claros:
+## Licen&ccedil;a
 
-- suporte apenas a `.csproj`
-- saÃ­da apenas em HTML
-- ausÃªncia de correÃ§Ãµes automÃ¡ticas
-- ausÃªncia de integraÃ§Ã£o com CI/CD
-- scanner de API baseado em regex
-- dependÃªncia de consulta remota para anÃ¡lise NuGet mais completa
-
-## PrÃ³ximas EvoluÃ§Ãµes
-
-EvoluÃ§Ãµes naturais para prÃ³ximas versÃµes:
-
-- exportaÃ§Ã£o em JSON ou CSV
-- enriquecimento das recomendaÃ§Ãµes de pacotes
-- ampliaÃ§Ã£o do catÃ¡logo de regras
-- comparaÃ§Ã£o entre mÃºltiplos scans
-- anÃ¡lise mais profunda de dependÃªncias transitivas
-- modo opcional com Roslyn para anÃ¡lise semÃ¢ntica
-
-## Casos de Uso
-
-- discovery tÃ©cnico antes de programas de modernizaÃ§Ã£o
-- suporte a aprovaÃ§Ã£o de budget para migraÃ§Ã£o
-- avaliaÃ§Ã£o de risco para adoÃ§Ã£o de `.NET 10`
-- preparaÃ§Ã£o de material para sponsors e stakeholders
-
-## Para Recrutadores TÃ©cnicos
-
-Este projeto demonstra experiÃªncia prÃ¡tica em:
-
-- arquitetura de ferramentas internas
-- anÃ¡lise de sistemas legados
-- engenharia de plataforma em `.NET`
-- design de CLI
-- geraÃ§Ã£o de relatÃ³rios tÃ©cnicos orientados a negÃ³cio
-- equilÃ­brio entre profundidade tÃ©cnica e comunicaÃ§Ã£o executiva
-
-## ContribuiÃ§Ã£o
-
-Ao contribuir com o projeto:
-
-- preserve a abordagem local-first
-- evite dependÃªncias desnecessÃ¡rias
-- mantenha o relatÃ³rio autocontido
-- prefira mudanÃ§as pequenas, objetivas e verificÃ¡veis
-
-## LicenÃ§a
-
-Defina aqui a licenÃ§a oficial do repositÃ³rio antes da publicaÃ§Ã£o no GitHub.
+Defina aqui a licen&ccedil;a oficial do reposit&oacute;rio antes da publica&ccedil;&atilde;o no GitHub.

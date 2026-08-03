@@ -2,8 +2,14 @@
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Traduz o TFM atual de um projeto em um perfil de impacto para migraÃ§Ã£o ao .NET 10.
+/// </summary>
 public static class ProjectClassification
 {
+    /// <summary>
+    /// Seleciona o perfil de maior criticidade quando o projeto declara mÃºltiplos TFMs.
+    /// </summary>
     public static ProjectMigrationProfile Classify(IEnumerable<string> targetFrameworks)
     {
         var profiles = targetFrameworks.Select(ClassifySingle).OrderByDescending(profile => profile.Weight).ToArray();
@@ -16,6 +22,9 @@ public static class ProjectClassification
         };
     }
 
+    /// <summary>
+    /// Mapeia um Ãºnico TFM para uma classificaÃ§Ã£o executiva de migraÃ§Ã£o.
+    /// </summary>
     private static ProjectMigrationProfile ClassifySingle(string tfm)
     {
         var normalized = tfm.Trim().ToLowerInvariant();

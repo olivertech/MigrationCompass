@@ -3,6 +3,9 @@ using MigrationCompass.Models;
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Aplica as regras de APIs legadas aos arquivos .cs de cada projeto.
+/// </summary>
 public sealed class ApiScanner
 {
     private readonly IReadOnlyList<(ApiRule Rule, Regex Regex)> _compiledRules;
@@ -14,6 +17,9 @@ public sealed class ApiScanner
             .ToArray();
     }
 
+    /// <summary>
+    /// Percorre os arquivos-fonte e registra cada ocorrÃªncia das regras configuradas.
+    /// </summary>
     public async Task<IReadOnlyList<ApiFinding>> ScanAsync(IEnumerable<ProjectScanResult> projects, CancellationToken cancellationToken)
     {
         var findings = new List<ApiFinding>();

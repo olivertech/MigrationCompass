@@ -4,11 +4,17 @@ using NuGet.Versioning;
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Avalia se os pacotes declarados pelos projetos sÃ£o compatÃ­veis com o alvo .NET 10.
+/// </summary>
 public sealed class NuGetChecker(INuGetPackageClient packageClient)
 {
     private static readonly NuGetFramework TargetFramework = NuGetFramework.ParseFolder("net10.0");
     private readonly INuGetPackageClient _packageClient = packageClient;
 
+    /// <summary>
+    /// Executa a anÃ¡lise de todos os pacotes encontrados nos projetos da solution.
+    /// </summary>
     public async Task<IReadOnlyList<PackageCompatibilityFinding>> CheckAsync(IEnumerable<ProjectScanResult> projects, CancellationToken cancellationToken)
     {
         var findings = new List<PackageCompatibilityFinding>();
@@ -29,6 +35,9 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient)
         return findings;
     }
 
+    /// <summary>
+    /// Determina o status de um pacote individual, incluindo atualizaÃ§Ã£o compatÃ­vel, bloqueio ou fallback offline.
+    /// </summary>
     private async Task<PackageCompatibilityFinding> EvaluatePackageAsync(string projectName, PackageReferenceInfo packageReference, CancellationToken cancellationToken)
     {
         if (string.Equals(packageReference.PrivateAssets, "all", StringComparison.OrdinalIgnoreCase))
@@ -129,6 +138,9 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient)
         }
     }
 
+    /// <summary>
+    /// Verifica se uma versÃ£o especÃ­fica do pacote expÃµe assets compatÃ­veis com .NET 10.
+    /// </summary>
     private async Task<bool> IsCompatibleAsync(string packageId, string version, CancellationToken cancellationToken)
     {
         var frameworks = await _packageClient.GetAssetFrameworkFoldersAsync(packageId, version, cancellationToken);
@@ -158,12 +170,18 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient)
         return false;
     }
 
+    /// <summary>
+    /// Ignora frameworks compartilhados cujo ciclo de compatibilidade jÃ¡ Ã© coberto pelo prÃ³prio TFM do projeto.
+    /// </summary>
     private static bool ShouldSkip(string packageId)
     {
         return packageId.StartsWith("Microsoft.NETCore.App", StringComparison.OrdinalIgnoreCase) ||
                packageId.StartsWith("Microsoft.AspNetCore.App", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Classifica erros de rede como cenÃ¡rios offline tolerÃ¡veis para o scanner.
+    /// </summary>
     private static bool IsOfflineScenario(Exception exception)
     {
         if (exception is HttpRequestException)

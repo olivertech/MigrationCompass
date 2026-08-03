@@ -3,10 +3,16 @@ using System.Text.Json;
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Implementa o acesso ao feed flat container do NuGet para consultar versÃµes e assets de pacotes.
+/// </summary>
 public sealed class FlatContainerNuGetClient(HttpClient httpClient) : INuGetPackageClient
 {
     private readonly HttpClient _httpClient = httpClient;
 
+    /// <summary>
+    /// ObtÃ©m a lista pÃºblica de versÃµes de um pacote.
+    /// </summary>
     public async Task<IReadOnlyList<string>> GetVersionsAsync(string packageId, CancellationToken cancellationToken)
     {
         var lowerId = packageId.ToLowerInvariant();
@@ -25,6 +31,9 @@ public sealed class FlatContainerNuGetClient(HttpClient httpClient) : INuGetPack
         return versions;
     }
 
+    /// <summary>
+    /// LÃª o conteÃºdo do .nupkg para identificar quais frameworks possuem assets publicados.
+    /// </summary>
     public async Task<IReadOnlyList<string>> GetAssetFrameworkFoldersAsync(string packageId, string version, CancellationToken cancellationToken)
     {
         var lowerId = packageId.ToLowerInvariant();

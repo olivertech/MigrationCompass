@@ -2,11 +2,17 @@
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Ajusta o ambiente do processo para permitir que o Microsoft.Build avalie projetos SDK-style localmente.
+/// </summary>
 public static class MsBuildEnvironment
 {
     private static bool _configured;
     private static string? _sdkDirectory;
 
+    /// <summary>
+    /// Resolve e publica as variÃ¡veis de ambiente mÃ­nimas para a avaliaÃ§Ã£o de projetos pelo MSBuild.
+    /// </summary>
     public static void Configure()
     {
         if (_configured)
@@ -78,6 +84,9 @@ public static class MsBuildEnvironment
         _configured = true;
     }
 
+    /// <summary>
+    /// Retorna propriedades globais complementares para cenÃ¡rios em que o carregamento precisa de pistas extras.
+    /// </summary>
     public static IDictionary<string, string> CreateGlobalProperties()
     {
         Configure();
@@ -93,6 +102,9 @@ public static class MsBuildEnvironment
         };
     }
 
+    /// <summary>
+    /// Tenta localizar o executÃ¡vel do dotnet instalado na mÃ¡quina atual.
+    /// </summary>
     private static string? ResolveDotnetPath()
     {
         var processPath = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH");

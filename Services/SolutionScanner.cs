@@ -6,8 +6,14 @@ using MigrationCompass.Models;
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Descobre os projetos de uma solution e extrai os metadados necessÃ¡rios para a anÃ¡lise de migraÃ§Ã£o.
+/// </summary>
 public sealed class SolutionScanner
 {
+    /// <summary>
+    /// Executa a leitura da solution, carregando projetos via MSBuild e usando fallback em XML quando necessÃ¡rio.
+    /// </summary>
     public async Task<SolutionScanResult> ScanAsync(ScanRequest request, CancellationToken cancellationToken)
     {
         await Task.Yield();
@@ -82,6 +88,9 @@ public sealed class SolutionScanner
         return result;
     }
 
+    /// <summary>
+    /// Extrai TFMs simples ou mÃºltiplos a partir do projeto jÃ¡ avaliado pelo MSBuild.
+    /// </summary>
     private static IReadOnlyList<string> ExtractTargetFrameworks(Project project)
     {
         var single = project.GetPropertyValue("TargetFramework");
@@ -99,6 +108,9 @@ public sealed class SolutionScanner
         return multiple.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 
+    /// <summary>
+    /// Coleta dependÃªncias diretas declaradas no projeto e em packages.config.
+    /// </summary>
     private static IReadOnlyList<PackageReferenceInfo> ExtractPackageReferences(string projectPath, Project project)
     {
         var packages = new List<PackageReferenceInfo>();
@@ -138,6 +150,9 @@ public sealed class SolutionScanner
             .ToArray();
     }
 
+    /// <summary>
+    /// Usa leitura XML direta quando a avaliaÃ§Ã£o completa do projeto nÃ£o Ã© possÃ­vel no runtime atual.
+    /// </summary>
     private static FallbackProjectData ParseProjectWithoutEvaluation(string projectPath)
     {
         var document = XDocument.Load(projectPath);

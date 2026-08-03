@@ -4,10 +4,16 @@ using MigrationCompass.Models;
 
 namespace MigrationCompass.Reporting;
 
+/// <summary>
+/// Gera o relatÃ³rio HTML autocontido apresentado ao pÃºblico tÃ©cnico e executivo.
+/// </summary>
 public sealed class HtmlReportGenerator
 {
     private const string AppVersion = "v3.0.0";
 
+    /// <summary>
+    /// Persiste o HTML gerado no diretÃ³rio de saÃ­da informado.
+    /// </summary>
     public string Write(SolutionScanResult result, string outputDirectory)
     {
         var fileName = $"{result.SolutionName}-relatorio-migracao.html";
@@ -16,6 +22,9 @@ public sealed class HtmlReportGenerator
         return filePath;
     }
 
+    /// <summary>
+    /// ConstrÃ³i o HTML final com resumo, score de risco e seÃ§Ãµes de achados.
+    /// </summary>
     public string Generate(SolutionScanResult result)
     {
         var encoder = HtmlEncoder.Default;
@@ -101,6 +110,9 @@ public sealed class HtmlReportGenerator
         return builder.ToString();
     }
 
+    /// <summary>
+    /// Consolida linhas de bloqueadores vindas de regras de API e de pacotes incompatÃ­veis.
+    /// </summary>
     private static List<string> BuildBlockerRows(SolutionScanResult result, HtmlEncoder encoder)
     {
         var rows = new List<string>();

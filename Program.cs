@@ -3,6 +3,7 @@ using MigrationCompass.Models;
 using MigrationCompass.Reporting;
 using MigrationCompass.Services;
 
+// Define a interface de linha de comando exposta ao operador do scanner.
 var solutionOption = new Option<FileInfo?>("--sln")
 {
     Description = "Caminho para o arquivo .sln (obrigatorio)."
@@ -25,6 +26,7 @@ var rootCommand = new RootCommand("MigrationCompass")
     formatOption
 };
 
+// Centraliza a leitura dos argumentos e delega a execuÃ§Ã£o para o pipeline principal.
 rootCommand.SetAction(async parseResult =>
 {
     var solutionFile = parseResult.GetValue(solutionOption);
@@ -35,6 +37,7 @@ rootCommand.SetAction(async parseResult =>
 
 return await rootCommand.Parse(args).InvokeAsync();
 
+// Orquestra o scan completo da solution e a geraÃ§Ã£o do relatÃ³rio final.
 static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDirectory, string format)
 {
     if (!string.Equals(format, "html", StringComparison.OrdinalIgnoreCase))
@@ -85,6 +88,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     return 0;
 }
 
+// Resolve a solution de entrada a partir do parÃ¢metro explÃ­cito ou da auto descoberta local.
 static string? ResolveSolutionPath(FileInfo? solutionFile)
 {
     if (solutionFile is not null)

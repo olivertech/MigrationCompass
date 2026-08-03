@@ -2,8 +2,14 @@
 
 namespace MigrationCompass.Services;
 
+/// <summary>
+/// Converte os achados tÃ©cnicos em mÃ©tricas executivas consumidas pelo relatÃ³rio.
+/// </summary>
 public static class ReportSummaryBuilder
 {
+    /// <summary>
+    /// Calcula totais e a pontuaÃ§Ã£o de risco com base nas regras atuais do produto.
+    /// </summary>
     public static ReportSummary Build(SolutionScanResult result)
     {
         var apiBlockers = result.ApiFindings.Count(finding => string.Equals(finding.Rule.Impact, "Alto", StringComparison.OrdinalIgnoreCase));

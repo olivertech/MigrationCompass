@@ -1,7 +1,13 @@
 ﻿namespace MigrationCompass.Models;
 
+/// <summary>
+/// Representa os parÃ¢metros mÃ­nimos necessÃ¡rios para iniciar uma execuÃ§Ã£o de scan.
+/// </summary>
 public sealed record ScanRequest(string SolutionPath, string OutputDirectory, string ReportFormat);
 
+/// <summary>
+/// Consolida o resultado completo do scan de uma solution.
+/// </summary>
 public sealed class SolutionScanResult
 {
     public required string SolutionName { get; init; }
@@ -13,6 +19,9 @@ public sealed class SolutionScanResult
     public ReportSummary Summary { get; set; } = new();
 }
 
+/// <summary>
+/// Armazena os metadados e os achados associados a um projeto individual.
+/// </summary>
 public sealed class ProjectScanResult
 {
     public required string ProjectName { get; init; }
@@ -24,6 +33,9 @@ public sealed class ProjectScanResult
     public required IReadOnlyList<string> SourceFiles { get; init; }
 }
 
+/// <summary>
+/// Resume a posiÃ§Ã£o de um projeto na jornada de migraÃ§Ã£o para .NET 10.
+/// </summary>
 public sealed class ProjectMigrationProfile
 {
     public required string Classification { get; init; }
@@ -32,6 +44,9 @@ public sealed class ProjectMigrationProfile
     public int Weight { get; init; }
 }
 
+/// <summary>
+/// Representa uma dependÃªncia declarada diretamente no projeto ou em packages.config.
+/// </summary>
 public sealed class PackageReferenceInfo
 {
     public required string PackageId { get; init; }
@@ -40,6 +55,9 @@ public sealed class PackageReferenceInfo
     public bool IsFromPackagesConfig { get; init; }
 }
 
+/// <summary>
+/// Define uma regra de detecÃ§Ã£o usada pelo scanner de APIs legadas.
+/// </summary>
 public sealed class ApiRule
 {
     public required string Id { get; init; }
@@ -52,6 +70,9 @@ public sealed class ApiRule
     public string? Pattern { get; init; }
 }
 
+/// <summary>
+/// Representa uma ocorrÃªncia concreta de API legada encontrada no cÃ³digo-fonte.
+/// </summary>
 public sealed class ApiFinding
 {
     public required string ProjectName { get; init; }
@@ -61,6 +82,9 @@ public sealed class ApiFinding
     public required string MatchedText { get; init; }
 }
 
+/// <summary>
+/// Representa o diagnÃ³stico de compatibilidade de um pacote com o alvo .NET 10.
+/// </summary>
 public sealed class PackageCompatibilityFinding
 {
     public required string ProjectName { get; init; }
@@ -74,6 +98,9 @@ public sealed class PackageCompatibilityFinding
     public bool IsWarning { get; init; }
 }
 
+/// <summary>
+/// Consolida os indicadores executivos exibidos no relatÃ³rio final.
+/// </summary>
 public sealed class ReportSummary
 {
     public int ProjectsScanned { get; init; }
