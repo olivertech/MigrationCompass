@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Xml.Linq;
 using Microsoft.Build.Construction;
 using Microsoft.Build.Evaluation;
@@ -264,8 +263,14 @@ public sealed class SolutionScanner
 
     private static bool IsSingleFileExecution()
     {
-        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        return string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation);
+        var assemblyName = typeof(SolutionScanner).Assembly.GetName().Name;
+        if (string.IsNullOrWhiteSpace(assemblyName))
+        {
+            return false;
+        }
+
+        var assemblyPath = Path.Combine(AppContext.BaseDirectory, $"{assemblyName}.dll");
+        return !File.Exists(assemblyPath);
     }
 
     private static string? NormalizeLegacyFramework(string? version, string? profile)
