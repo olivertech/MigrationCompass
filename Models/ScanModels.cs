@@ -68,6 +68,10 @@ public sealed class ApiRule
     public required string Alternative { get; init; }
     public required string Docs { get; init; }
     public string? Pattern { get; init; }
+    public string? AppliesTo { get; init; }
+    public string? PackageId { get; init; }
+    public string? BusinessImpact { get; init; }
+    public string? MonthlyInactionCost { get; init; }
 }
 
 /// <summary>
@@ -94,6 +98,9 @@ public sealed class PackageCompatibilityFinding
     public required string Impact { get; init; }
     public required string Recommendation { get; init; }
     public required string Details { get; init; }
+    public string? Effort { get; init; }
+    public string? BusinessImpact { get; init; }
+    public string? EstimatedMonthlyInactionCost { get; init; }
     public bool IsBlocker { get; init; }
     public bool IsWarning { get; init; }
 }

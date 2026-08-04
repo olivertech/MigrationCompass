@@ -1,79 +1,100 @@
-﻿# MigrationCompass
+# MigrationCompass
 
-O `MigrationCompass` &eacute; uma ferramenta de an&aacute;lise de legado criada para apoiar decis&otilde;es de moderniza&ccedil;&atilde;o em ambientes `.NET`. Seu papel &eacute; transformar sinais t&eacute;cnicos dispersos em uma leitura executiva clara sobre risco, bloqueio e esfor&ccedil;o de migra&ccedil;&atilde;o para `.NET 10`.
+O `MigrationCompass` é uma ferramenta de análise de legado criada para apoiar decisões de modernização em ambientes `.NET`, traduzindo sinais técnicos em uma leitura executiva clara sobre risco, bloqueios e esforço de migração até `.NET 10`.
 
-## Por que este projeto importa
+## Proposta de Valor
 
-Em programas de transforma&ccedil;&atilde;o digital, decis&otilde;es de migra&ccedil;&atilde;o costumam esbarrar em tr&ecirc;s desafios:
+Em programas de modernização, não basta saber que o sistema é legado. É preciso entender:
 
-- baixa visibilidade sobre o legado atual
-- dificuldade de traduzir risco t&eacute;cnico para linguagem executiva
-- aus&ecirc;ncia de um artefato simples para apoiar prioriza&ccedil;&atilde;o e investimento
+- onde estão os principais bloqueadores
+- quanto esse legado custa para evoluir
+- quais frentes exigem mais investimento
+- quais riscos podem afetar prazo, operação e estabilidade
 
-O `MigrationCompass` foi concebido para reduzir essa lacuna.
+O `MigrationCompass` foi concebido para responder a essas perguntas com um relatório objetivo, acionável e orientado à tomada de decisão.
 
-## O que o projeto entrega
+## O que a solução entrega
 
-- leitura de solutions e projetos `.NET`
-- classifica&ccedil;&atilde;o da maturidade de migra&ccedil;&atilde;o
-- identifica&ccedil;&atilde;o de depend&ecirc;ncias potencialmente incompat&iacute;veis
-- detec&ccedil;&atilde;o de APIs legadas com alto custo de adapta&ccedil;&atilde;o
-- gera&ccedil;&atilde;o de relat&oacute;rio HTML pronto para discuss&atilde;o com lideran&ccedil;a
+- leitura automatizada de solutions e projetos `.NET`
+- classificação de maturidade de migração
+- identificação de APIs legadas e dependências server-side críticas
+- separação entre ruído técnico e bloqueadores reais
+- relatório HTML executivo pronto para discussão com arquitetura, gestão e sponsors
+
+## Destaques atuais
+
+A versão atual do projeto já cobre cenários frequentes em aplicações web legadas, incluindo:
+
+- `ASP.NET MVC 5`
+- `ASP.NET Web API 2`
+- `OWIN/Katana`
+- `ASP.NET Identity`
+- `SignalR`
+- `Entity Framework 6`
+- `NHibernate`
+- `AutoMapper`
+- `Serilog`, `NLog` e `log4net`
+- `Hangfire`, `Quartz` e observabilidade legado
+
+Com isso, o relatório consegue refletir não apenas problemas de compatibilidade, mas também frentes típicas de retrabalho em sistemas corporativos reais.
 
 ## Valor para Stakeholders
 
-O projeto ajuda a responder perguntas de neg&oacute;cio com base t&eacute;cnica:
+O projeto ajuda lideranças a responder perguntas estratégicas:
 
-- Quais aplica&ccedil;&otilde;es merecem prioridade de moderniza&ccedil;&atilde;o?
-- Onde est&atilde;o os principais bloqueadores de migra&ccedil;&atilde;o?
-- Qual &eacute; o risco consolidado da solution?
-- Onde o esfor&ccedil;o t&eacute;cnico tende a ser maior?
+- Quais aplicações devem entrar primeiro na jornada de modernização?
+- Onde há maior risco de custo oculto?
+- Quais dependências exigirão replanejamento técnico?
+- Em quais pontos a inação já representa custo operacional ou risco de SLA?
 
-## Valor para Recrutadores T&eacute;cnicos
+## Valor para Recrutadores Técnicos
 
-Este reposit&oacute;rio demonstra compet&ecirc;ncias pr&aacute;ticas em:
+Este repositório demonstra competências práticas em:
 
 - arquitetura de ferramentas internas
 - engenharia de plataforma em `.NET`
-- an&aacute;lise de sistemas legados
+- análise de sistemas legados
 - desenho de CLI
-- transforma&ccedil;&atilde;o de dados t&eacute;cnicos em artefatos executivos
-- equil&iacute;brio entre profundidade t&eacute;cnica e clareza de comunica&ccedil;&atilde;o
+- geração de artefatos executivos a partir de evidências técnicas
+- equilíbrio entre profundidade de engenharia e clareza de comunicação
 
-## Diferenciais do Projeto
+## Diferenciais
 
-- execu&ccedil;&atilde;o local
+- execução local
 - foco em `.NET 10`
 - baixo acoplamento
-- relat&oacute;rio HTML autocontido
-- arquitetura simples e extens&iacute;vel
+- catálogo extensível de APIs e pacotes legados
+- visão executiva com impacto de negócio e custo estimado de inação
 
 ## Perfil de Uso
 
-O `MigrationCompass` &eacute; relevante para:
+O `MigrationCompass` é especialmente útil para:
 
 - arquitetos de software
 - tech leads
-- consultores de moderniza&ccedil;&atilde;o
-- sponsors de transforma&ccedil;&atilde;o digital
-- recrutadores t&eacute;cnicos interessados em projetos de arquitetura e tooling
+- consultores de modernização
+- sponsors de transformação digital
+- recrutadores técnicos interessados em projetos de arquitetura e tooling
 
-## Estado Atual
+## Estado Atual do Projeto
 
-O projeto j&aacute; possui um MVP funcional, capaz de:
+Em `04/08/2026`, o projeto já possui um MVP funcional com:
 
-- escanear projetos `.csproj`
-- avaliar TFMs at&eacute; `.NET 9`
-- gerar vis&atilde;o executiva de risco
-- operar com fallback offline para an&aacute;lise de pacotes
+- scanner de projetos `.csproj`
+- análise de TFMs desde `.NET Framework 3.x/4.x` até `.NET 9`
+- classificação de risco para migração ao alvo `.NET 10`
+- catálogo ampliado de dependências server-side web
+- fallback offline para análise de pacotes
+- relatório HTML executivo
 
-## Pr&oacute;ximos Passos Poss&iacute;veis
+## Próximos Passos Possíveis
 
-- evoluir a an&aacute;lise de depend&ecirc;ncias
-- enriquecer o cat&aacute;logo de regras
-- ampliar formatos de sa&iacute;da
-- aumentar a profundidade sem&acirc;ntica do scanner
+- segmentar o catálogo por domínios de arquitetura
+- ampliar análise de dependências transitivas
+- adicionar exportação JSON/CSV
+- comparar execuções históricas
+- aprofundar análise semântica opcional com Roslyn
 
-## Documento T&eacute;cnico
+## Documento Técnico
 
-Para detalhes de arquitetura, execu&ccedil;&atilde;o, estrutura de c&oacute;digo e valida&ccedil;&atilde;o, consulte `README.md`.
+Para detalhes de arquitetura, execução, componentes, validação e estrutura do código, consulte `README.md`.

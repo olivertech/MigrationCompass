@@ -13,6 +13,8 @@ public sealed class ApiScanner
     public ApiScanner(IReadOnlyList<ApiRule> rules)
     {
         _compiledRules = rules
+            .Where(rule => !string.Equals(rule.AppliesTo, "package", StringComparison.OrdinalIgnoreCase))
+            .Where(rule => !string.IsNullOrWhiteSpace(rule.Pattern) || !string.IsNullOrWhiteSpace(rule.Api))
             .Select(rule => (rule, new Regex(rule.Pattern ?? Regex.Escape(rule.Api).Replace("\\*", ".*"), RegexOptions.Compiled)))
             .ToArray();
     }

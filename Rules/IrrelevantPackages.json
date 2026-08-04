@@ -1,0 +1,19 @@
+[
+  "jquery",
+  "jquery.validation",
+  "jquery.ui.combined",
+  "bootstrap",
+  "modernizr",
+  "webgrease",
+  "antlr",
+  "microsoft.jquery.unobtrusive.validation",
+  "microsoft.aspnet.web.optimization",
+  "microsoft.codedom.providers.dotnetcompilerplatform",
+  "microsoft.web.infrastructure",
+  "respond",
+  "knockoutjs",
+  "fontawesome",
+  "toastr",
+  "moment.js",
+  "microsoft.typescript.msbuild"
+]

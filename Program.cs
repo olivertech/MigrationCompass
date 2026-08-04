@@ -61,14 +61,16 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     var resolvedOutputDirectory = outputDirectory?.FullName ?? Directory.GetCurrentDirectory();
 
     var rulesPath = Path.Combine(AppContext.BaseDirectory, "Rules", "BlockingRules.json");
+    var irrelevantPackagesPath = Path.Combine(AppContext.BaseDirectory, "Rules", "IrrelevantPackages.json");
     var rules = await RuleCatalog.LoadAsync(rulesPath, CancellationToken.None);
+    var irrelevantPackages = await IrrelevantPackageCatalog.LoadAsync(irrelevantPackagesPath, CancellationToken.None);
     var solutionScanner = new SolutionScanner();
     var apiScanner = new ApiScanner(rules);
     var nugetClient = new FlatContainerNuGetClient(new HttpClient
     {
         Timeout = TimeSpan.FromSeconds(20)
     });
-    var nugetChecker = new NuGetChecker(nugetClient);
+    var nugetChecker = new NuGetChecker(nugetClient, rules, irrelevantPackages);
     var reportGenerator = new HtmlReportGenerator();
 
     var request = new ScanRequest(resolvedSolutionPath, resolvedOutputDirectory, format);

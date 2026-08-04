@@ -1,59 +1,57 @@
-﻿# MigrationCompass
+# MigrationCompass
 
-O `MigrationCompass` &eacute; uma ferramenta de console em `.NET 10` para an&aacute;lise t&eacute;cnica de solu&ccedil;&otilde;es legadas. O projeto foi criado para apoiar jornadas de migra&ccedil;&atilde;o para `.NET 10`, identificando riscos, depend&ecirc;ncias incompat&iacute;veis, APIs cr&iacute;ticas e o esfor&ccedil;o t&eacute;cnico associado.
+O `MigrationCompass` é uma ferramenta de console em `.NET 10` voltada à análise técnica de soluções legadas e à geração de relatórios executivos para apoiar migrações até `.NET 10`.
 
-Este README apresenta a vis&atilde;o t&eacute;cnica e detalhada da solu&ccedil;&atilde;o. Para uma vers&atilde;o institucional voltada a stakeholders e recrutadores t&eacute;cnicos, consulte `README.institucional.md`.
+Este documento apresenta a visão técnica e detalhada do projeto. Para uma versão institucional, consulte `README.institucional.md`.
 
 ## Objetivo
 
-O foco do `MigrationCompass` &eacute; executar uma avalia&ccedil;&atilde;o local e objetiva sobre uma solution `.NET`, produzindo um relat&oacute;rio HTML que ajude equipes t&eacute;cnicas e lideran&ccedil;as a responder:
+O foco do `MigrationCompass` é escanear uma solution `.NET` e responder, com evidências:
 
-- quais projetos est&atilde;o mais distantes do alvo `.NET 10`
-- quais depend&ecirc;ncias podem bloquear a moderniza&ccedil;&atilde;o
-- quais APIs exigir&atilde;o refatora&ccedil;&atilde;o
-- qual &eacute; o risco agregado da solution
+- quais projetos estão mais distantes do alvo `.NET 10`
+- quais pacotes server-side podem bloquear ou encarecer a migração
+- quais APIs legadas exigirão refatoração
+- quais achados têm impacto mensurável em produção
 
 ## Escopo Atual
 
-A vers&atilde;o atual do projeto j&aacute; implementa:
+A versão atual já implementa:
 
 - descoberta de solution e projetos `.csproj`
-- leitura de `TargetFramework` e `TargetFrameworks`
+- leitura de `TargetFramework`, `TargetFrameworks` e `TargetFrameworkVersion`
 - leitura de `PackageReference`, `Reference` e `packages.config`
-- classifica&ccedil;&atilde;o de projetos pela dist&acirc;ncia at&eacute; `.NET 10`
+- classificação de projetos desde `.NET Framework 3.x/4.x` até `.NET 9`
 - scanner de APIs legadas baseado em regras JSON
-- verifica&ccedil;&atilde;o de compatibilidade de pacotes via `api.nuget.org`
-- fallback offline para cen&aacute;rios sem acesso &agrave; internet
-- gera&ccedil;&atilde;o de relat&oacute;rio HTML com vis&atilde;o executiva
-- su&iacute;te local de valida&ccedil;&atilde;o sem frameworks de teste adicionais
+- verificação de compatibilidade de pacotes com `.NET 10`
+- fallback offline para cenários sem acesso ao NuGet
+- relatório HTML executivo focado em bloqueadores relevantes
+- suíte local de validação sem frameworks externos de teste
 
 ## Arquitetura
 
 ### Fluxo principal
 
-O fluxo da aplica&ccedil;&atilde;o segue a sequ&ecirc;ncia abaixo:
-
-1. A CLI recebe os par&acirc;metros de entrada.
-2. A solution &eacute; localizada e os projetos `.csproj` s&atilde;o descobertos.
-3. Cada projeto &eacute; classificado por TFM.
-4. As depend&ecirc;ncias e refer&ecirc;ncias s&atilde;o coletadas.
-5. Os arquivos `.cs` s&atilde;o analisados com regras de APIs legadas.
-6. Os pacotes NuGet s&atilde;o avaliados quanto &agrave; compatibilidade com `.NET 10`.
-7. Os achados s&atilde;o consolidados em um relat&oacute;rio HTML.
+1. A CLI recebe os parâmetros de entrada.
+2. A solution é localizada e os projetos `.csproj` são descobertos.
+3. Cada projeto é classificado pela distância até `.NET 10`.
+4. Dependências, referências e arquivos `.cs` são coletados.
+5. APIs legadas são avaliadas com base em `Rules/BlockingRules.json`.
+6. Pacotes NuGet relevantes são avaliados contra regras de catálogo e compatibilidade real.
+7. Os achados são consolidados em um relatório HTML executivo.
 
 ### Componentes centrais
 
 - `Program.cs`
-  - orquestra a execu&ccedil;&atilde;o ponta a ponta
-  - valida argumentos
+  - orquestra a execução ponta a ponta
   - resolve a solution
-  - dispara scanners e o gerador de relat&oacute;rio
+  - carrega regras e catálogos
+  - dispara scanners e gerador de relatório
 
 - `Services/SolutionScanner.cs`
-  - descobre projetos na solution
-  - extrai TFMs, refer&ecirc;ncias e depend&ecirc;ncias
-  - tenta usar `Microsoft.Build`
-  - utiliza fallback em XML quando a avalia&ccedil;&atilde;o completa do projeto falha
+  - descobre projetos
+  - extrai TFMs, referências e pacotes
+  - usa `Microsoft.Build` quando possível
+  - recorre a fallback em XML para projetos clássicos ou cenários single-file
 
 - `Services/ApiScanner.cs`
   - percorre arquivos `.cs`
@@ -61,70 +59,92 @@ O fluxo da aplica&ccedil;&atilde;o segue a sequ&ecirc;ncia abaixo:
 
 - `Services/NuGetChecker.cs`
   - consulta o feed do NuGet
-  - avalia compatibilidade de pacotes com `.NET 10`
-  - trata indisponibilidade remota como aviso offline
+  - ignora pacotes irrelevantes para runtime
+  - cruza pacotes com catálogo server-side
+  - suporta famílias com curingas, como `Microsoft.Owin.*`
 
 - `Reporting/HtmlReportGenerator.cs`
-  - gera o relat&oacute;rio final em HTML com CSS inline
+  - gera um HTML autocontido
+  - prioriza poucos bloqueadores críticos com impacto de negócio
 
-## Classifica&ccedil;&atilde;o de Projetos
+## Catálogo de Regras
 
-Os projetos s&atilde;o classificados conforme o risco estrutural da migra&ccedil;&atilde;o para `.NET 10`:
+O catálogo principal está em `Rules/BlockingRules.json`.
 
-- `.NET Framework 4.x` = risco base alto
-- `.NET Core 2.x / 3.x` = risco alto
-- `.NET 5 / 6 / 7` = risco m&eacute;dio
-- `.NET 8 / 9` = risco menor, mas ainda eleg&iacute;veis ao scanner
-- `.NET 10` = refer&ecirc;ncia informativa
+Ele hoje cobre dois eixos:
 
-Essa classifica&ccedil;&atilde;o alimenta o contexto executivo do relat&oacute;rio e ajuda na prioriza&ccedil;&atilde;o da moderniza&ccedil;&atilde;o.
+- APIs legadas, como:
+  - `System.Web.HttpContext.Current`
+  - `System.Web.Security.FormsAuthentication`
+  - `System.ServiceModel.*`
+  - `System.Configuration.ConfigurationManager.AppSettings`
 
-## Scanner de APIs Legadas
+- pacotes server-side frequentes em projetos web legados, como:
+  - `Microsoft.AspNet.Mvc`
+  - `Microsoft.AspNet.WebApi.*`
+  - `Microsoft.AspNet.SignalR.*`
+  - `Microsoft.Owin.*`
+  - `Microsoft.AspNet.Identity.*`
+  - `EntityFramework`
+  - `NHibernate*`
+  - `AutoMapper*`
+  - `Serilog*`
+  - `Hangfire.*`
+  - `Quartz.*`
+  - `log4net`
+  - `NLog.*`
+  - `Elmah*`
 
-O cat&aacute;logo de regras est&aacute; armazenado em `Rules/BlockingRules.json` e cont&eacute;m regras curadas para identificar pontos cl&aacute;ssicos de ruptura em migra&ccedil;&otilde;es, como:
+Cada regra pode incluir:
 
-- `System.Web.HttpContext.Current`
-- `System.Web.Security.FormsAuthentication`
-- `System.ServiceModel.*`
-- `System.Configuration.ConfigurationManager.AppSettings`
-
-Cada ocorr&ecirc;ncia registrada inclui:
-
-- identificador da regra
-- categoria
-- impacto
-- esfor&ccedil;o estimado
-- alternativa sugerida
-- link de documenta&ccedil;&atilde;o
+- `impact`
+- `effort`
+- `alternative`
+- `businessImpact`
+- `monthlyInactionCost`
+- `docs`
 
 ## Compatibilidade de Pacotes
 
-O scanner analisa pacotes diretos do projeto e pacotes vindos de `packages.config`.
+O scanner avalia apenas pacotes que podem afetar a migração de runtime.
 
-Quando o acesso ao `api.nuget.org` est&aacute; dispon&iacute;vel:
+### Pacotes ignorados
 
-- vers&otilde;es publicadas s&atilde;o consultadas
-- assets do pacote s&atilde;o avaliados
-- a compatibilidade com `.NET 10` &eacute; inferida por framework suportado
+Pacotes client-side, de front-end ou de build não entram como bloqueadores estruturais, por exemplo:
 
-Quando o ambiente est&aacute; offline:
+- `jquery`
+- `bootstrap`
+- `modernizr`
+- `webgrease`
+- `microsoft.typescript.msbuild`
 
-- a execu&ccedil;&atilde;o continua
-- o pacote &eacute; marcado como `Nao verificado offline`
-- o relat&oacute;rio preserva a rastreabilidade da limita&ccedil;&atilde;o
+Essa lista é mantida em `Rules/IrrelevantPackages.json`.
 
-## Relat&oacute;rio HTML
+### Pacotes relevantes
 
-O relat&oacute;rio gerado cont&eacute;m:
+Para pacotes server-side, o `NuGetChecker` combina:
 
-- vis&atilde;o geral da solution
-- data e hora do scan
-- pontua&ccedil;&atilde;o de risco
-- tabela de bloqueadores cr&iacute;ticos
-- avisos e observa&ccedil;&otilde;es
-- resumo dos projetos analisados
+- regra de catálogo do projeto
+- compatibilidade real de assets/TFMs no NuGet
+- fallback offline quando o feed não está acessível
 
-### F&oacute;rmula de risco
+Isso permite separar melhor:
+
+- ruído operacional
+- alertas de atualização
+- bloqueadores de modernização
+
+## Relatório HTML
+
+O relatório gerado contém:
+
+- resumo executivo da solution
+- pontuação de risco
+- até 4 bloqueadores críticos com impacto mensurável
+- panorama dos projetos escaneados
+- observações sobre pacotes não verificados offline
+
+### Fórmula de risco
 
 ```text
 ((BloqueadoresCriticos * 12) + (Avisos * 6)) / TotalProjetos * 10
@@ -132,11 +152,11 @@ O relat&oacute;rio gerado cont&eacute;m:
 
 Regras:
 
-- o valor m&aacute;ximo &eacute; `100`
-- impactos `Alto` contam como bloqueadores cr&iacute;ticos
-- impactos `Medio` e `Baixo` contam como avisos
+- o valor máximo é `100`
+- impactos `Alto` contam como bloqueadores críticos
+- impactos `Médio` e `Baixo` contam como avisos
 
-## Estrutura do Reposit&oacute;rio
+## Estrutura do Repositório
 
 ```text
 MigrationCompass/
@@ -152,7 +172,7 @@ MigrationCompass/
 '\- MigrationCompass.Specs/
 ```
 
-## Stack T&eacute;cnica
+## Stack Técnica
 
 - `.NET 10`
 - `Microsoft.Build 18.8.2`
@@ -173,13 +193,13 @@ dotnet run --project .\MigrationCompass.csproj -- --help
 dotnet run --project .\MigrationCompass.csproj -- --sln "C:\LegacyApps\MinhaSolucao.sln" --output ".\artifacts"
 ```
 
-### Regras de resolu&ccedil;&atilde;o da solution
+### Publicar como executável portátil
 
-- `--sln` &eacute; opcional apenas quando existe exatamente uma solution no diret&oacute;rio atual
-- se nenhuma solution for encontrada, a execu&ccedil;&atilde;o falha
-- se m&uacute;ltiplas solutions forem encontradas sem `--sln`, a execu&ccedil;&atilde;o falha
+```powershell
+dotnet publish .\MigrationCompass.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+```
 
-## Valida&ccedil;&atilde;o Local
+## Validação Local
 
 ### Build
 
@@ -199,23 +219,23 @@ dotnet run --project .\MigrationCompass.Specs\MigrationCompass.Specs.csproj
 dotnet run --project .\MigrationCompass.csproj -- --sln ".\Fixtures\SampleLegacySolution\SampleLegacySolution.sln" --output ".\artifacts"
 ```
 
-## Limita&ccedil;&otilde;es Atuais
+## Limitações Atuais
 
 - suporte apenas a projetos `.csproj`
-- sa&iacute;da apenas em HTML
-- aus&ecirc;ncia de corre&ccedil;&otilde;es autom&aacute;ticas
-- aus&ecirc;ncia de integra&ccedil;&atilde;o com pipeline CI/CD
+- saída apenas em HTML
+- ausência de correções automáticas
+- ausência de integração nativa com pipeline CI/CD
 - scanner de APIs baseado em regex
-- an&aacute;lise de compatibilidade NuGet depende de metadados remotos quando online
+- análise NuGet dependente de metadados remotos quando online
 
-## Pr&oacute;ximas Evolu&ccedil;&otilde;es
+## Próximas Evoluções
 
-- exporta&ccedil;&atilde;o em JSON ou CSV
-- expans&atilde;o do cat&aacute;logo de regras
-- an&aacute;lise mais profunda de depend&ecirc;ncias transitivas
-- compara&ccedil;&atilde;o hist&oacute;rica entre scans
-- modo opcional com an&aacute;lise sem&acirc;ntica via Roslyn
+- separar o catálogo por domínios, como `web`, `auth`, `data` e `observability`
+- ampliar análise de dependências transitivas
+- exportar também em JSON ou CSV
+- comparar execuções históricas
+- adicionar um modo opcional com análise semântica via Roslyn
 
-## Licen&ccedil;a
+## Licença
 
-Defina aqui a licen&ccedil;a oficial do reposit&oacute;rio antes da publica&ccedil;&atilde;o no GitHub.
+Defina aqui a licença oficial do repositório antes da publicação no GitHub.
