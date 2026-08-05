@@ -1,0 +1,36 @@
+{
+  "hourlyRateMin": 140,
+  "hourlyRateMax": 240,
+  "weeksPerMonth": 4.33,
+  "low": {
+    "weeklyHoursMin": 2,
+    "weeklyHoursMax": 5,
+    "teamSizeMin": 1,
+    "teamSizeMax": 1.5,
+    "infraCostMin": 250,
+    "infraCostMax": 900,
+    "riskMultiplierMin": 1.00,
+    "riskMultiplierMax": 1.20
+  },
+  "medium": {
+    "weeklyHoursMin": 4,
+    "weeklyHoursMax": 10,
+    "teamSizeMin": 1,
+    "teamSizeMax": 2,
+    "infraCostMin": 600,
+    "infraCostMax": 2000,
+    "riskMultiplierMin": 1.15,
+    "riskMultiplierMax": 1.45
+  },
+  "high": {
+    "weeklyHoursMin": 8,
+    "weeklyHoursMax": 16,
+    "teamSizeMin": 1.5,
+    "teamSizeMax": 3,
+    "infraCostMin": 1500,
+    "infraCostMax": 5000,
+    "riskMultiplierMin": 1.35,
+    "riskMultiplierMax": 1.80
+  },
+  "disclaimer": "Os valores apresentados são faixas orientativas construídas a partir de premissas configuráveis de esforço técnico, composição de equipe e exposição operacional. Eles servem como insumo inicial para priorização e aprofundamento do assessment, não como estimativa financeira definitiva ou compromisso comercial."
+}

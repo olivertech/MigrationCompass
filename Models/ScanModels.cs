@@ -16,6 +16,8 @@ public sealed class SolutionScanResult
     public List<ProjectScanResult> Projects { get; } = [];
     public List<ApiFinding> ApiFindings { get; } = [];
     public List<PackageCompatibilityFinding> PackageFindings { get; } = [];
+    public EconomicParameters? EconomicParameters { get; set; }
+    public SolutionAdvisory? Advisory { get; set; }
     public ReportSummary Summary { get; set; } = new();
 }
 
@@ -72,6 +74,7 @@ public sealed class ApiRule
     public string? PackageId { get; init; }
     public string? BusinessImpact { get; init; }
     public string? MonthlyInactionCost { get; init; }
+    public EconomicProfile? EconomicProfile { get; init; }
 }
 
 /// <summary>
@@ -101,8 +104,62 @@ public sealed class PackageCompatibilityFinding
     public string? Effort { get; init; }
     public string? BusinessImpact { get; init; }
     public string? EstimatedMonthlyInactionCost { get; init; }
+    public EconomicProfile? EconomicProfile { get; init; }
     public bool IsBlocker { get; init; }
     public bool IsWarning { get; init; }
+}
+
+/// <summary>
+/// Define as premissas financeiras usadas para gerar ranges de custo orientativos no relatório.
+/// </summary>
+public sealed class EconomicParameters
+{
+    public required decimal HourlyRateMin { get; init; }
+    public required decimal HourlyRateMax { get; init; }
+    public required decimal WeeksPerMonth { get; init; }
+    public required EconomicBand Low { get; init; }
+    public required EconomicBand Medium { get; init; }
+    public required EconomicBand High { get; init; }
+    public string? Disclaimer { get; init; }
+}
+
+/// <summary>
+/// Representa uma banda padrão de premissas para esforço, composição de equipe e exposição operacional.
+/// </summary>
+public sealed class EconomicBand
+{
+    public required decimal WeeklyHoursMin { get; init; }
+    public required decimal WeeklyHoursMax { get; init; }
+    public required decimal TeamSizeMin { get; init; }
+    public required decimal TeamSizeMax { get; init; }
+    public required decimal InfraCostMin { get; init; }
+    public required decimal InfraCostMax { get; init; }
+    public required decimal RiskMultiplierMin { get; init; }
+    public required decimal RiskMultiplierMax { get; init; }
+}
+
+/// <summary>
+/// Permite ajustar pontualmente uma regra com premissas econômicas próprias.
+/// </summary>
+public sealed class EconomicProfile
+{
+    public decimal? WeeklyHoursMin { get; init; }
+    public decimal? WeeklyHoursMax { get; init; }
+    public decimal? TeamSizeMin { get; init; }
+    public decimal? TeamSizeMax { get; init; }
+    public decimal? InfraCostMin { get; init; }
+    public decimal? InfraCostMax { get; init; }
+    public decimal? RiskMultiplierMin { get; init; }
+    public decimal? RiskMultiplierMax { get; init; }
+}
+
+/// <summary>
+/// Representa um range monetário mensal calculado a partir das premissas configuradas.
+/// </summary>
+public sealed class MonthlyCostRange
+{
+    public required decimal Min { get; init; }
+    public required decimal Max { get; init; }
 }
 
 /// <summary>
@@ -115,4 +172,32 @@ public sealed class ReportSummary
     public int Warnings { get; init; }
     public int InformationalItems { get; init; }
     public int RiskScore { get; init; }
+}
+
+/// <summary>
+/// Representa uma leitura consultiva consolidada para apoiar decisão gerencial.
+/// </summary>
+public sealed class SolutionAdvisory
+{
+    public required string ExecutiveHeadline { get; init; }
+    public required string RecommendedStrategy { get; init; }
+    public required string Rationale { get; init; }
+    public required string ManagerialPositioning { get; init; }
+    public required string DistanceAssessment { get; init; }
+    public required string OpportunitySummary { get; init; }
+    public required IReadOnlyList<string> DecisionDrivers { get; init; }
+    public required IReadOnlyList<DecisionPathOption> Paths { get; init; }
+}
+
+/// <summary>
+/// Define um caminho possível de decisão com esforço relativo e quando faz sentido.
+/// </summary>
+public sealed class DecisionPathOption
+{
+    public required string Title { get; init; }
+    public required string Fit { get; init; }
+    public required string Effort { get; init; }
+    public required string IndicativeRisk { get; init; }
+    public required string Guidance { get; init; }
+    public bool IsRecommended { get; init; }
 }

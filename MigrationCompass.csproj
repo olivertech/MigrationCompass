@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Rules\BlockingRules.json" />
+    <EmbeddedResource Include="Rules\EconomicParameters.json" />
     <EmbeddedResource Include="Rules\IrrelevantPackages.json" />
   </ItemGroup>
 

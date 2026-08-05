@@ -20,6 +20,8 @@ O `MigrationCompass` foi concebido para responder a essas perguntas com um relat
 - identificação de APIs legadas e dependências server-side críticas
 - separação entre ruído técnico e bloqueadores reais
 - relatório HTML executivo pronto para discussão com arquitetura, gestão e sponsors
+- faixas de custo orientativas baseadas em premissas configuráveis
+- leitura consultiva com caminhos estratégicos possíveis para decisão
 
 ## Destaques atuais
 
@@ -38,6 +40,12 @@ A versão atual do projeto já cobre cenários frequentes em aplicações web le
 
 Com isso, o relatório consegue refletir não apenas problemas de compatibilidade, mas também frentes típicas de retrabalho em sistemas corporativos reais.
 
+## Como o custo é tratado
+
+O projeto passa a trabalhar com **faixas orientativas de custo estimado de inação**, construídas a partir de premissas explícitas de esforço técnico, composição de equipe e exposição operacional.
+
+Isso ajuda a tornar o relatório mais confiável para conversas iniciais com liderança, sem prometer uma precisão financeira que só faria sentido em uma avaliação mais aprofundada.
+
 ## Valor para Stakeholders
 
 O projeto ajuda lideranças a responder perguntas estratégicas:
@@ -46,6 +54,7 @@ O projeto ajuda lideranças a responder perguntas estratégicas:
 - Onde há maior risco de custo oculto?
 - Quais dependências exigirão replanejamento técnico?
 - Em quais pontos a inação já representa custo operacional ou risco de SLA?
+- Quando ainda faz sentido migrar e quando a reconstrução gradual passa a ser uma alternativa mais racional?
 
 ## Valor para Recrutadores Técnicos
 
@@ -84,6 +93,7 @@ Em `04/08/2026`, o projeto já possui um MVP funcional com:
 - análise de TFMs desde `.NET Framework 3.x/4.x` até `.NET 9`
 - classificação de risco para migração ao alvo `.NET 10`
 - catálogo ampliado de dependências server-side web
+- modelo econômico parametrizado por faixas
 - fallback offline para análise de pacotes
 - relatório HTML executivo
 

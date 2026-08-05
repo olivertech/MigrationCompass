@@ -61,8 +61,10 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     var resolvedOutputDirectory = outputDirectory?.FullName ?? Directory.GetCurrentDirectory();
 
     var rulesPath = Path.Combine(AppContext.BaseDirectory, "Rules", "BlockingRules.json");
+    var economicParametersPath = Path.Combine(AppContext.BaseDirectory, "Rules", "EconomicParameters.json");
     var irrelevantPackagesPath = Path.Combine(AppContext.BaseDirectory, "Rules", "IrrelevantPackages.json");
     var rules = await RuleCatalog.LoadAsync(rulesPath, CancellationToken.None);
+    var economicParameters = await EconomicParametersCatalog.LoadAsync(economicParametersPath, CancellationToken.None);
     var irrelevantPackages = await IrrelevantPackageCatalog.LoadAsync(irrelevantPackagesPath, CancellationToken.None);
     var solutionScanner = new SolutionScanner();
     var apiScanner = new ApiScanner(rules);
@@ -75,9 +77,11 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
 
     var request = new ScanRequest(resolvedSolutionPath, resolvedOutputDirectory, format);
     var scanResult = await solutionScanner.ScanAsync(request, CancellationToken.None);
+    scanResult.EconomicParameters = economicParameters;
     scanResult.ApiFindings.AddRange(await apiScanner.ScanAsync(scanResult.Projects, CancellationToken.None));
     scanResult.PackageFindings.AddRange(await nugetChecker.CheckAsync(scanResult.Projects, CancellationToken.None));
     scanResult.Summary = ReportSummaryBuilder.Build(scanResult);
+    scanResult.Advisory = StrategyAdvisor.Build(scanResult);
 
     Directory.CreateDirectory(resolvedOutputDirectory);
     var reportFilePath = reportGenerator.Write(scanResult, resolvedOutputDirectory);

@@ -23,6 +23,8 @@ A versão atual já implementa:
 - classificação de projetos desde `.NET Framework 3.x/4.x` até `.NET 9`
 - scanner de APIs legadas baseado em regras JSON
 - verificação de compatibilidade de pacotes com `.NET 10`
+- modelo econômico parametrizado para geração de faixas de custo orientativas
+- parecer gerencial determinístico com caminhos estratégicos de decisão
 - fallback offline para cenários sem acesso ao NuGet
 - relatório HTML executivo focado em bloqueadores relevantes
 - suíte local de validação sem frameworks externos de teste
@@ -103,6 +105,9 @@ Cada regra pode incluir:
 - `businessImpact`
 - `monthlyInactionCost`
 - `docs`
+- `economicProfile` para ajustes finos de cálculo econômico por regra
+
+As premissas econômicas globais ficam em `Rules/EconomicParameters.json`.
 
 ## Compatibilidade de Pacotes
 
@@ -134,11 +139,29 @@ Isso permite separar melhor:
 - alertas de atualização
 - bloqueadores de modernização
 
+## Modelo Econômico
+
+O relatório não depende mais apenas de faixas textuais curadas no catálogo.
+
+Agora o custo estimado de inação é gerado a partir de premissas configuráveis em `Rules/EconomicParameters.json`, como:
+
+- custo/hora estimado
+- semanas por mês
+- bandas de esforço baixo, médio e alto
+- tamanho de equipe
+- custo mensal de infraestrutura
+- multiplicadores de risco operacional
+
+O cálculo gera uma **faixa orientativa**, e não um valor fechado. A proposta é apoiar priorização e discovery, preservando transparência sobre as premissas adotadas.
+
 ## Relatório HTML
 
 O relatório gerado contém:
 
 - resumo executivo da solution
+- leitura gerencial com recomendação estratégica
+- drivers objetivos da decisão
+- caminhos possíveis entre migração direta, modernização incremental e reconstrução gradual
 - pontuação de risco
 - até 4 bloqueadores críticos com impacto mensurável
 - panorama dos projetos escaneados

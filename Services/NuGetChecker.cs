@@ -61,6 +61,7 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient, IReadOnlyLis
                 Effort = "Baixo",
                 BusinessImpact = null,
                 EstimatedMonthlyInactionCost = null,
+                EconomicProfile = matchingRule?.EconomicProfile,
                 IsBlocker = false,
                 IsWarning = false
             };
@@ -97,6 +98,7 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient, IReadOnlyLis
                     Effort = "Baixo",
                     BusinessImpact = null,
                     EstimatedMonthlyInactionCost = null,
+                    EconomicProfile = matchingRule?.EconomicProfile,
                     IsBlocker = false,
                     IsWarning = false
                 };
@@ -118,6 +120,7 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient, IReadOnlyLis
                         Effort = matchingRule?.Effort ?? "Medio",
                         BusinessImpact = matchingRule?.BusinessImpact,
                         EstimatedMonthlyInactionCost = matchingRule?.MonthlyInactionCost,
+                        EconomicProfile = matchingRule?.EconomicProfile,
                         IsBlocker = false,
                         IsWarning = true
                     };
@@ -136,6 +139,7 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient, IReadOnlyLis
                 Effort = matchingRule?.Effort ?? "Medio",
                 BusinessImpact = matchingRule?.BusinessImpact ?? BuildGenericBusinessImpact(packageReference.PackageId),
                 EstimatedMonthlyInactionCost = matchingRule?.MonthlyInactionCost ?? "A estimar apos discovery tecnico",
+                EconomicProfile = matchingRule?.EconomicProfile,
                 IsBlocker = true,
                 IsWarning = false
             };
@@ -154,6 +158,7 @@ public sealed class NuGetChecker(INuGetPackageClient packageClient, IReadOnlyLis
                 Effort = matchingRule?.Effort ?? "Baixo",
                 BusinessImpact = matchingRule?.BusinessImpact,
                 EstimatedMonthlyInactionCost = matchingRule?.MonthlyInactionCost,
+                EconomicProfile = matchingRule?.EconomicProfile,
                 IsBlocker = false,
                 IsWarning = true
             };
