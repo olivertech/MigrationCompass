@@ -25,6 +25,8 @@ A versão atual já implementa:
 - verificação de compatibilidade de pacotes com `.NET 10`
 - modelo econômico parametrizado para geração de faixas de custo orientativas
 - parecer gerencial determinístico com caminhos estratégicos de decisão
+- scanner heurístico de sinais de não conformidade com princípios SOLID
+- pontuação estrutural de manutenibilidade baseada em 4 vetores
 - fallback offline para cenários sem acesso ao NuGet
 - relatório HTML executivo focado em bloqueadores relevantes
 - suíte local de validação sem frameworks externos de teste
@@ -79,7 +81,15 @@ Ele hoje cobre dois eixos:
   - `System.Web.HttpContext.Current`
   - `System.Web.Security.FormsAuthentication`
   - `System.ServiceModel.*`
-  - `System.Configuration.ConfigurationManager.AppSettings`
+- `System.Configuration.ConfigurationManager.AppSettings`
+
+Além das regras de API e pacote, o projeto agora também avalia sinais heurísticos de:
+
+- `SRP` (`Single Responsibility Principle`)
+- `OCP` (`Open/Closed Principle`)
+- `LSP` (`Liskov Substitution Principle`)
+- `ISP` (`Interface Segregation Principle`)
+- `DIP` (`Dependency Inversion Principle`)
 
 - pacotes server-side frequentes em projetos web legados, como:
   - `Microsoft.AspNet.Mvc`
@@ -154,16 +164,29 @@ Agora o custo estimado de inação é gerado a partir de premissas configurávei
 
 O cálculo gera uma **faixa orientativa**, e não um valor fechado. A proposta é apoiar priorização e discovery, preservando transparência sobre as premissas adotadas.
 
+## Pontuação Estrutural de Manutenibilidade
+
+O relatório agora também apresenta uma pontuação estrutural de manutenibilidade de `0` a `100`, calculada a partir de quatro vetores:
+
+- risco de migração
+- densidade de sinais heurísticos de SOLID
+- idade tecnológica da base
+- acoplamento a legado
+
+Essa métrica busca refletir o custo estrutural de manter, adaptar e evoluir a solution, indo além do esforço pontual de atualização de framework.
+
 ## Relatório HTML
 
 O relatório gerado contém:
 
 - resumo executivo da solution
 - leitura gerencial com recomendação estratégica
+- cenário recomendado para a solution em texto corrido, com tom executivo
 - drivers objetivos da decisão
 - caminhos possíveis entre migração direta, modernização incremental e reconstrução gradual
 - pontuação de risco
 - até 4 bloqueadores críticos com impacto mensurável
+- sinais estruturais de fragilidade de código relacionados a SOLID
 - panorama dos projetos escaneados
 - observações sobre pacotes não verificados offline
 

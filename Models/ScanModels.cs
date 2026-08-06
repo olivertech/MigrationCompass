@@ -16,6 +16,7 @@ public sealed class SolutionScanResult
     public List<ProjectScanResult> Projects { get; } = [];
     public List<ApiFinding> ApiFindings { get; } = [];
     public List<PackageCompatibilityFinding> PackageFindings { get; } = [];
+    public List<SolidFinding> SolidFindings { get; } = [];
     public EconomicParameters? EconomicParameters { get; set; }
     public SolutionAdvisory? Advisory { get; set; }
     public ReportSummary Summary { get; set; } = new();
@@ -172,6 +173,37 @@ public sealed class ReportSummary
     public int Warnings { get; init; }
     public int InformationalItems { get; init; }
     public int RiskScore { get; init; }
+    public MaintainabilityAssessment Maintainability { get; init; } = new()
+    {
+        Classification = "Não avaliado",
+        ExecutiveSummary = "Sem avaliação de manutenibilidade."
+    };
+}
+
+/// <summary>
+/// Consolida a pontuação estrutural de manutenibilidade e seus vetores de composição.
+/// </summary>
+public sealed class MaintainabilityAssessment
+{
+    public int Score { get; init; }
+    public required string Classification { get; init; } = "Não avaliado";
+    public required string ExecutiveSummary { get; init; } = "Sem avaliação de manutenibilidade.";
+    public MaintainabilityComponent MigrationRisk { get; init; } = new();
+    public MaintainabilityComponent SolidDensity { get; init; } = new();
+    public MaintainabilityComponent TechnologicalAge { get; init; } = new();
+    public MaintainabilityComponent LegacyCoupling { get; init; } = new();
+}
+
+/// <summary>
+/// Representa um componente individual da pontuação estrutural de manutenibilidade.
+/// </summary>
+public sealed class MaintainabilityComponent
+{
+    public string Name { get; init; } = string.Empty;
+    public int RawScore { get; init; }
+    public int WeightedScore { get; init; }
+    public int WeightPercent { get; init; }
+    public string Explanation { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -180,6 +212,7 @@ public sealed class ReportSummary
 public sealed class SolutionAdvisory
 {
     public required string ExecutiveHeadline { get; init; }
+    public required string ScenarioNarrative { get; init; }
     public required string RecommendedStrategy { get; init; }
     public required string Rationale { get; init; }
     public required string ManagerialPositioning { get; init; }
@@ -200,4 +233,21 @@ public sealed class DecisionPathOption
     public required string IndicativeRisk { get; init; }
     public required string Guidance { get; init; }
     public bool IsRecommended { get; init; }
+}
+
+/// <summary>
+/// Representa um indício heurístico de violação de princípios SOLID em código-fonte C#.
+/// </summary>
+public sealed class SolidFinding
+{
+    public required string ProjectName { get; init; }
+    public required string FilePath { get; init; }
+    public required string Principle { get; init; }
+    public required string Severity { get; init; }
+    public required string Confidence { get; init; }
+    public required string TargetName { get; init; }
+    public required string Evidence { get; init; }
+    public required string Explanation { get; init; }
+    public required string Recommendation { get; init; }
+    public int? LineNumber { get; init; }
 }

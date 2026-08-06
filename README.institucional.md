@@ -22,6 +22,8 @@ O `MigrationCompass` foi concebido para responder a essas perguntas com um relat
 - relatório HTML executivo pronto para discussão com arquitetura, gestão e sponsors
 - faixas de custo orientativas baseadas em premissas configuráveis
 - leitura consultiva com caminhos estratégicos possíveis para decisão
+- avaliação heurística de fragilidades estruturais associadas a princípios SOLID
+- pontuação estrutural de manutenibilidade para apoiar priorização executiva
 
 ## Destaques atuais
 
@@ -55,6 +57,7 @@ O projeto ajuda lideranças a responder perguntas estratégicas:
 - Quais dependências exigirão replanejamento técnico?
 - Em quais pontos a inação já representa custo operacional ou risco de SLA?
 - Quando ainda faz sentido migrar e quando a reconstrução gradual passa a ser uma alternativa mais racional?
+- Quais sinais de complexidade estrutural do código podem encarecer ou inviabilizar a evolução do legado?
 
 ## Valor para Recrutadores Técnicos
 

@@ -57,17 +57,48 @@ public sealed class HtmlReportGenerator
         builder.AppendLine($"  <p><strong>Horário do scan:</strong> {result.ScannedAt:yyyy-MM-dd HH:mm:ss}</p>");
         builder.AppendLine("  <div class=\"summary-card\">");
         builder.AppendLine($"    <div class=\"risk-score\">Pontuação de risco: {result.Summary.RiskScore}/100</div>");
+        builder.AppendLine($"    <div class=\"risk-score\">Pontuação estrutural de manutenibilidade: {result.Summary.Maintainability.Score}/100</div>");
         builder.AppendLine("    <ul>");
         builder.AppendLine($"      <li>Projetos escaneados: {result.Summary.ProjectsScanned}</li>");
         builder.AppendLine($"      <li>Bloqueadores críticos relevantes: {result.Summary.CriticalBlockers}</li>");
         builder.AppendLine($"      <li>Avisos técnicos restantes: {result.Summary.Warnings}</li>");
         builder.AppendLine($"      <li>Itens informativos: {result.Summary.InformationalItems}</li>");
+        builder.AppendLine($"      <li>Classificação de manutenibilidade: {encoder.Encode(result.Summary.Maintainability.Classification)}</li>");
         builder.AppendLine("    </ul>");
         builder.AppendLine("    <p class=\"muted\">A pontuação prioriza bloqueadores de runtime, dependências server-side e APIs legadas com impacto real na jornada para .NET 10.</p>");
+        builder.AppendLine($"    <p class=\"muted\">{encoder.Encode(result.Summary.Maintainability.ExecutiveSummary)}</p>");
+        builder.AppendLine("  </div>");
+
+        builder.AppendLine("  <h2>Pontuação Estrutural de Manutenibilidade</h2>");
+        builder.AppendLine("  <div class=\"summary-card\">");
+        builder.AppendLine("    <p>Esta métrica combina quatro vetores: risco de migração, densidade de sinais SOLID, idade tecnológica e acoplamento a legado. O objetivo é refletir o custo estrutural de manter e evoluir a solution, e não apenas o esforço pontual de atualização.</p>");
+        builder.AppendLine("  </div>");
+        builder.AppendLine("  <table class=\"compact\">");
+        builder.AppendLine("    <thead><tr><th>Componente</th><th>Peso</th><th>Score Bruto</th><th>Contribuição</th><th>Leitura</th></tr></thead>");
+        builder.AppendLine("    <tbody>");
+        foreach (var component in EnumerateMaintainabilityComponents(result.Summary.Maintainability))
+        {
+            builder.AppendLine($"      <tr><td>{encoder.Encode(component.Name)}</td><td>{component.WeightPercent}%</td><td>{component.RawScore}/100</td><td>{component.WeightedScore} ponto(s)</td><td>{encoder.Encode(component.Explanation)}</td></tr>");
+        }
+        builder.AppendLine("    </tbody>");
+        builder.AppendLine("  </table>");
+        builder.AppendLine("  <div class=\"callout\">");
+        builder.AppendLine("    <strong>Legenda gerencial da pontuação:</strong>");
+        builder.AppendLine("    <ul>");
+        builder.AppendLine("      <li><strong>0 a 39 - Controlável:</strong> há espaço para evolução incremental com menor pressão estrutural, embora ainda possam existir pontos localizados de atenção.</li>");
+        builder.AppendLine("      <li><strong>40 a 64 - Moderada:</strong> a solution já apresenta sinais consistentes de desgaste técnico e tende a exigir planejamento mais cuidadoso para sustentar novas entregas.</li>");
+        builder.AppendLine("      <li><strong>65 a 84 - Alta:</strong> o custo de manter, adaptar e migrar cresce de forma perceptível, com maior risco de retrabalho, acoplamento e baixa previsibilidade de execução.</li>");
+        builder.AppendLine("      <li><strong>85 a 100 - Crítica:</strong> o legado passa a indicar limitação estrutural relevante, sugerindo avaliação estratégica entre modernização profunda, transição por etapas ou reconstrução parcial.</li>");
+        builder.AppendLine("    </ul>");
         builder.AppendLine("  </div>");
 
         if (result.Advisory is not null)
         {
+            builder.AppendLine("  <h2>Cenário Recomendado para Esta Solution</h2>");
+            builder.AppendLine("  <div class=\"summary-card\">");
+            builder.AppendLine($"    <p>{encoder.Encode(result.Advisory.ScenarioNarrative)}</p>");
+            builder.AppendLine("  </div>");
+
             builder.AppendLine("  <h2>Leitura Gerencial</h2>");
             builder.AppendLine("  <div class=\"summary-card\">");
             builder.AppendLine($"    <p><strong>Síntese executiva:</strong> {encoder.Encode(result.Advisory.ExecutiveHeadline)}</p>");
@@ -99,6 +130,42 @@ public sealed class HtmlReportGenerator
 
             builder.AppendLine("    </tbody>");
             builder.AppendLine("  </table>");
+        }
+
+        if (result.SolidFindings.Count > 0)
+        {
+            builder.AppendLine("  <h2>Qualidade de Código e Sinais de Aderência ao SOLID</h2>");
+            builder.AppendLine("  <div class=\"summary-card\">");
+            builder.AppendLine($"    <p>Foram identificados {result.SolidFindings.Count} indício(s) heurístico(s) de possível fragilidade estrutural relacionada a princípios SOLID. Esses achados não devem ser lidos como prova absoluta de violação, mas como sinais úteis de acoplamento, excesso de responsabilidade, contratos extensos ou abstrações frágeis que podem elevar o custo de mudança em sistemas legados.</p>");
+            builder.AppendLine("  </div>");
+
+            builder.AppendLine("  <table class=\"compact\">");
+            builder.AppendLine("    <thead><tr><th>Princípio</th><th>Alvo</th><th>Severidade</th><th>Confiança</th><th>Evidência</th><th>Leitura consultiva</th></tr></thead>");
+            builder.AppendLine("    <tbody>");
+            foreach (var finding in result.SolidFindings.Take(10))
+            {
+                var target = finding.LineNumber is null
+                    ? $"{finding.TargetName} ({finding.ProjectName})"
+                    : $"{finding.TargetName} ({finding.ProjectName}, linha {finding.LineNumber})";
+
+                builder.AppendLine($"      <tr><td>{encoder.Encode(finding.Principle)}</td><td>{encoder.Encode(target)}</td><td>{encoder.Encode(finding.Severity)}</td><td>{encoder.Encode(finding.Confidence)}</td><td>{encoder.Encode(finding.Evidence)}</td><td>{encoder.Encode(finding.Explanation)}</td></tr>");
+            }
+
+            builder.AppendLine("    </tbody>");
+            builder.AppendLine("  </table>");
+
+            builder.AppendLine("  <h2>Recomendações de Refatoração Estrutural</h2>");
+            builder.AppendLine("  <ul>");
+            foreach (var recommendation in result.SolidFindings
+                         .OrderByDescending(finding => SolidSeverityWeight(finding.Severity))
+                         .Select(finding => finding.Recommendation)
+                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                         .Take(6))
+            {
+                builder.AppendLine($"    <li>{encoder.Encode(recommendation)}</li>");
+            }
+
+            builder.AppendLine("  </ul>");
         }
 
         builder.AppendLine("  <h2>Bloqueadores Críticos (Impacto Mensurável em Produção)</h2>");
@@ -288,6 +355,25 @@ public sealed class HtmlReportGenerator
             },
             Disclaimer = "Os valores do relatório são faixas orientativas construídas a partir de premissas configuráveis de esforço técnico, composição de equipe e exposição operacional. Eles servem como insumo inicial para priorização e aprofundamento do assessment, não como estimativa financeira definitiva ou compromisso comercial."
         };
+    }
+
+    private static int SolidSeverityWeight(string severity)
+    {
+        return severity.Trim().ToLowerInvariant() switch
+        {
+            "alto" => 3,
+            "médio" => 2,
+            "medio" => 2,
+            _ => 1
+        };
+    }
+
+    private static IEnumerable<MaintainabilityComponent> EnumerateMaintainabilityComponents(MaintainabilityAssessment assessment)
+    {
+        yield return assessment.MigrationRisk;
+        yield return assessment.SolidDensity;
+        yield return assessment.TechnologicalAge;
+        yield return assessment.LegacyCoupling;
     }
 
     private sealed record BlockerInsight(int Priority, string Blocker, string BusinessImpact, string Effort, string MonthlyCost);

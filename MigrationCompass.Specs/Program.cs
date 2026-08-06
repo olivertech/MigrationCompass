@@ -1,4 +1,4 @@
-﻿using MigrationCompass.Models;
+using MigrationCompass.Models;
 using MigrationCompass.Reporting;
 using MigrationCompass.Services;
 
@@ -20,6 +20,7 @@ internal sealed class SpecSuite
         await RunAsync("Gera parecer gerencial deterministico", TestStrategyAdvisorAsync, failures);
         await RunAsync("Gera HTML esperado", TestHtmlGeneratorAsync, failures);
         await RunAsync("Calcula faixa economica parametrizada", TestCostEstimatorAsync, failures);
+        await RunAsync("Detecta sinais heurísticos de SOLID", TestSolidScannerAsync, failures);
         await RunAsync("NuGet offline vira aviso", TestNuGetOfflineFallbackAsync, failures);
         await RunAsync("Ignora pacotes irrelevantes", TestIrrelevantPackagesAsync, failures);
         await RunAsync("Aplica insight de negocio para pacote bloqueador", TestPackageBusinessInsightAsync, failures);
@@ -147,6 +148,78 @@ internal sealed class SpecSuite
 
         result.Summary = ReportSummaryBuilder.Build(result);
         AssertEqual(90, result.Summary.RiskScore, "Score de risco");
+        AssertTrue(result.Summary.Maintainability.Score > 0, "Score de manutenibilidade");
+        AssertTrue(result.Summary.Maintainability.MigrationRisk.RawScore >= result.Summary.RiskScore - 1, "Componente risco de migracao");
+        return Task.CompletedTask;
+    }
+
+    private static Task TestStrategyAdvisorAsync()
+    {
+        var result = new SolutionScanResult
+        {
+            SolutionName = "ContabilApp",
+            SolutionPath = "ContabilApp.sln",
+            Summary = new ReportSummary
+            {
+                ProjectsScanned = 1,
+                CriticalBlockers = 8,
+                Warnings = 1,
+                InformationalItems = 0,
+                RiskScore = 100
+            }
+        };
+
+        result.Projects.Add(new ProjectScanResult
+        {
+            ProjectName = "Contabil.Web",
+            ProjectPath = "Contabil.Web.csproj",
+            TargetFrameworks = ["net481"],
+            MigrationProfile = ProjectClassification.Classify(["net481"]),
+            PackageReferences = [],
+            AssemblyReferences = [],
+            SourceFiles = []
+        });
+
+        result.ApiFindings.Add(new ApiFinding
+        {
+            ProjectName = "Contabil.Web",
+            FilePath = "Global.asax.cs",
+            LineNumber = 10,
+            MatchedText = "HttpContext.Current",
+            Rule = new ApiRule
+            {
+                Id = "WEB001",
+                Api = "System.Web.HttpContext.Current",
+                Category = "WebForms",
+                Impact = "Alto",
+                Effort = "Medio",
+                Alternative = "Migrar",
+                Docs = "https://learn.microsoft.com/"
+            }
+        });
+
+        result.PackageFindings.Add(new PackageCompatibilityFinding
+        {
+            ProjectName = "Contabil.Web",
+            PackageId = "Microsoft.AspNet.Mvc",
+            RequestedVersion = "5.2.7",
+            Status = "BLOQUEADOR",
+            Impact = "Alto",
+            Recommendation = "Migrar para ASP.NET Core MVC",
+            Details = "Detalhes",
+            Effort = "Alto",
+            BusinessImpact = "Impacto alto",
+            EstimatedMonthlyInactionCost = "R$ 1.000",
+            IsBlocker = true,
+            IsWarning = false
+        });
+
+        result.Advisory = StrategyAdvisor.Build(result);
+        AssertTrue(result.Advisory is not null, "Parecer gerado");
+        AssertTrue(result.Advisory!.ScenarioNarrative.Contains("reconstrução", StringComparison.OrdinalIgnoreCase), "Narrativa do cenário");
+        AssertTrue(result.Advisory.RecommendedStrategy.Contains("Reconstrução", StringComparison.Ordinal), "Estratégia de reconstrução");
+        AssertTrue(result.Advisory.DecisionDrivers.Count >= 4, "Drivers objetivos");
+        AssertTrue(result.Advisory.Paths.Any(path => path.IsRecommended && path.Title.Contains("Reconstrução", StringComparison.Ordinal)), "Caminho recomendado coerente");
         return Task.CompletedTask;
     }
 
@@ -199,6 +272,7 @@ internal sealed class SpecSuite
             Advisory = new SolutionAdvisory
             {
                 ExecutiveHeadline = "A solução apresenta distância tecnológica elevada para uma migração direta até .NET 10.",
+                ScenarioNarrative = "A distância tecnológica sugere que a melhor leitura é tratar a evolução como reconstrução gradual.",
                 RecommendedStrategy = "Reconstrução orientada por domínio, com convivência gradual entre legado e novos componentes.",
                 Rationale = "O volume de bloqueadores e o acoplamento ao legado tornam o salto direto pouco atrativo.",
                 ManagerialPositioning = "O caso se aproxima mais de um reposicionamento tecnológico do que de uma simples atualização de versão.",
@@ -272,85 +346,37 @@ internal sealed class SpecSuite
             }
         });
 
+        result.SolidFindings.Add(new SolidFinding
+        {
+            ProjectName = "Legacy.Web",
+            FilePath = "Legacy.cs",
+            Principle = "SRP",
+            Severity = "Alto",
+            Confidence = "Alta",
+            TargetName = "LegacyManager",
+            Evidence = "Classe com muitas linhas.",
+            Explanation = "Há indício de múltiplas responsabilidades concentradas.",
+            Recommendation = "Dividir por responsabilidade.",
+            LineNumber = 10
+        });
+
         var html = new HtmlReportGenerator().Generate(result);
         AssertTrue(html.Contains("Relatório Executivo de Migração para .NET 10", StringComparison.Ordinal), "Cabecalho");
         AssertTrue(html.Contains("Pontuação de risco: 100/100", StringComparison.Ordinal), "Score");
+        AssertTrue(html.Contains("Pontuação estrutural de manutenibilidade", StringComparison.Ordinal), "Score de manutenibilidade");
+        AssertTrue(html.Contains("Pontuação Estrutural de Manutenibilidade", StringComparison.Ordinal), "Secao manutenibilidade");
+        AssertTrue(html.Contains("Legenda gerencial da pontuação", StringComparison.Ordinal), "Legenda gerencial");
+        AssertTrue(html.Contains("85 a 100 - Crítica", StringComparison.Ordinal), "Faixa critica");
+        AssertTrue(html.Contains("Cenário Recomendado para Esta Solution", StringComparison.Ordinal), "Cenario recomendado");
         AssertTrue(html.Contains("Bloqueadores Críticos", StringComparison.Ordinal), "Titulo executivo");
         AssertTrue(html.Contains("Leitura Gerencial", StringComparison.Ordinal), "Leitura gerencial");
         AssertTrue(html.Contains("Caminhos Estratégicos Possíveis", StringComparison.Ordinal), "Caminhos estrategicos");
         AssertTrue(html.Contains("Base técnica da leitura", StringComparison.Ordinal), "Base tecnica consultiva");
+        AssertTrue(html.Contains("Posicionamento recomendado", StringComparison.Ordinal), "Posicionamento recomendado");
         AssertTrue(html.Contains("HttpContext.Current aumenta acoplamento", StringComparison.Ordinal), "Impacto de negocio");
+        AssertTrue(html.Contains("Qualidade de Código e Sinais de Aderência ao SOLID", StringComparison.Ordinal), "Secao solid");
         AssertTrue(html.Contains("Premissas Econômicas", StringComparison.Ordinal), "Premissas");
         AssertTrue(html.Contains("Faixas orientativas para assessment inicial.", StringComparison.Ordinal), "Disclaimer");
-        return Task.CompletedTask;
-    }
-
-    private static Task TestStrategyAdvisorAsync()
-    {
-        var result = new SolutionScanResult
-        {
-            SolutionName = "ContabilApp",
-            SolutionPath = "ContabilApp.sln",
-            Summary = new ReportSummary
-            {
-                ProjectsScanned = 1,
-                CriticalBlockers = 8,
-                Warnings = 1,
-                InformationalItems = 0,
-                RiskScore = 100
-            }
-        };
-
-        result.Projects.Add(new ProjectScanResult
-        {
-            ProjectName = "Contabil.Web",
-            ProjectPath = "Contabil.Web.csproj",
-            TargetFrameworks = ["net481"],
-            MigrationProfile = ProjectClassification.Classify(["net481"]),
-            PackageReferences = [],
-            AssemblyReferences = [],
-            SourceFiles = []
-        });
-
-        result.ApiFindings.Add(new ApiFinding
-        {
-            ProjectName = "Contabil.Web",
-            FilePath = "Global.asax.cs",
-            LineNumber = 10,
-            MatchedText = "HttpContext.Current",
-            Rule = new ApiRule
-            {
-                Id = "WEB001",
-                Api = "System.Web.HttpContext.Current",
-                Category = "WebForms",
-                Impact = "Alto",
-                Effort = "Medio",
-                Alternative = "Migrar",
-                Docs = "https://learn.microsoft.com/"
-            }
-        });
-
-        result.PackageFindings.Add(new PackageCompatibilityFinding
-        {
-            ProjectName = "Contabil.Web",
-            PackageId = "Microsoft.AspNet.Mvc",
-            RequestedVersion = "5.2.7",
-            Status = "BLOQUEADOR",
-            Impact = "Alto",
-            Recommendation = "Migrar para ASP.NET Core MVC",
-            Details = "Detalhes",
-            Effort = "Alto",
-            BusinessImpact = "Impacto alto",
-            EstimatedMonthlyInactionCost = "R$ 1.000",
-            IsBlocker = true,
-            IsWarning = false
-        });
-
-        result.Advisory = StrategyAdvisor.Build(result);
-        AssertTrue(result.Advisory is not null, "Parecer gerado");
-        AssertTrue(result.Advisory!.RecommendedStrategy.Contains("Reconstrução", StringComparison.Ordinal), "Estratégia de reconstrução");
-        AssertTrue(result.Advisory.DecisionDrivers.Count >= 4, "Drivers objetivos");
-        AssertTrue(result.Advisory.Paths.Any(path => path.IsRecommended && path.Title.Contains("Reconstrução", StringComparison.Ordinal)), "Caminho recomendado coerente");
         return Task.CompletedTask;
     }
 
@@ -413,6 +439,98 @@ internal sealed class SpecSuite
         AssertTrue(range.Max > range.Min, "Faixa maxima maior");
         AssertTrue(CostEstimator.Format(range).Contains("R$", StringComparison.Ordinal), "Formatacao monetaria");
         return Task.CompletedTask;
+    }
+
+    private static async Task TestSolidScannerAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"migrationcompass-solid-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        var filePath = Path.Combine(tempRoot, "LegacyManager.cs");
+
+        try
+        {
+            var source = """
+using System;
+
+public interface ILegacyService
+{
+    void A();
+    void B();
+    void C();
+    void D();
+    void E();
+    void F();
+    void G();
+    void H();
+    void I();
+}
+
+public class LegacyManager
+{
+    private readonly object _a;
+    private readonly object _b;
+    private readonly object _c;
+    private readonly object _d;
+    private readonly object _e;
+    private readonly object _f;
+
+    public LegacyManager(object a, object b, object c, object d, object e, object f, object g)
+    {
+        _a = a;
+        _b = b;
+        _c = c;
+        _d = d;
+        _e = e;
+        _f = f;
+    }
+
+    public void Process(int kind)
+    {
+        var x1 = new object();
+        var x2 = new object();
+        var x3 = new object();
+        var x4 = new object();
+        switch (kind)
+        {
+            case 1: Console.WriteLine("a"); break;
+            case 2: Console.WriteLine("b"); break;
+            default: Console.WriteLine("c"); break;
+        }
+
+        if (kind == 1) { }
+        else if (kind == 2) { }
+        else if (kind == 3) { }
+        else if (kind == 4) { }
+        else if (kind == 5) { }
+    }
+}
+""";
+
+            await File.WriteAllTextAsync(filePath, source);
+
+            var project = new ProjectScanResult
+            {
+                ProjectName = "Legacy.Project",
+                ProjectPath = "Legacy.Project.csproj",
+                TargetFrameworks = ["net481"],
+                MigrationProfile = ProjectClassification.Classify(["net481"]),
+                PackageReferences = [],
+                AssemblyReferences = [],
+                SourceFiles = [filePath]
+            };
+
+            var findings = await new SolidScanner().ScanAsync([project], CancellationToken.None);
+            AssertTrue(findings.Any(finding => finding.Principle == "ISP"), "ISP detectado");
+            AssertTrue(findings.Any(finding => finding.Principle == "DIP"), "DIP detectado");
+            AssertTrue(findings.Any(finding => finding.Principle == "OCP"), "OCP detectado");
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, true);
+            }
+        }
     }
 
     private static async Task TestNuGetOfflineFallbackAsync()

@@ -38,6 +38,8 @@ public static class StrategyAdvisor
                 ? "A solução exige modernização estruturada por etapas antes de qualquer salto relevante para .NET 10."
                 : "A solução ainda demanda esforço relevante, mas pode ser tratada com uma estratégia progressiva de modernização.";
 
+        var scenarioNarrative = BuildScenarioNarrative(rebuildCandidate, directMigrationIsWeak, frameworkProjects, blockerCount, legacyWebSignals, result.Summary.RiskScore);
+
         var recommendedStrategy = rebuildCandidate
             ? "Reconstrução orientada por domínio, com convivência gradual entre legado e novos componentes."
             : directMigrationIsWeak
@@ -64,6 +66,7 @@ public static class StrategyAdvisor
         return new SolutionAdvisory
         {
             ExecutiveHeadline = executiveHeadline,
+            ScenarioNarrative = scenarioNarrative,
             RecommendedStrategy = recommendedStrategy,
             Rationale = rationale,
             ManagerialPositioning = managerialPositioning,
@@ -172,5 +175,20 @@ public static class StrategyAdvisor
                 IsRecommended = rebuildCandidate
             }
         ];
+    }
+
+    private static string BuildScenarioNarrative(bool rebuildCandidate, bool directMigrationIsWeak, int frameworkProjects, int blockerCount, int legacyWebSignals, int riskScore)
+    {
+        if (rebuildCandidate)
+        {
+            return $"Considerando o volume de legado em .NET Framework, a presença de {blockerCount} bloqueador(es) crítico(s), a incidência de {legacyWebSignals} sinal(is) fortes de acoplamento a tecnologias web clássicas e uma pontuação de risco em {riskScore}/100, o cenário observado se aproxima mais de uma decisão de reconstrução gradual do que de um upgrade tradicional. Em termos gerenciais, isso significa que insistir em uma migração direta até .NET 10 tende a concentrar esforço alto, prazo extenso e risco operacional relevante em uma única frente de execução. Uma estratégia mais racional, nesse contexto, é trabalhar a modernização por domínio, módulo ou capacidade de negócio, preservando a continuidade operacional do legado enquanto uma nova base tecnológica é construída ou enquanto fronteiras mais modernas são introduzidas de forma progressiva.";
+        }
+
+        if (directMigrationIsWeak)
+        {
+            return $"A solução ainda concentra sinais típicos de legado profundo, com {frameworkProjects} projeto(s) em .NET Framework, {blockerCount} bloqueador(es) crítico(s) e forte dependência de componentes web clássicos. Isso sugere que uma migração direta até .NET 10 teria baixa previsibilidade de prazo e custo. Sob uma ótica de gestão, o caminho mais prudente é reduzir a distância tecnológica em ondas sucessivas: primeiro estabilizar fronteiras, dependências e componentes mais sensíveis; depois avançar na modernização estrutural; e só então tratar a convergência final para a plataforma alvo.";
+        }
+
+        return $"Embora o ambiente ainda apresente riscos e pontos de atenção, a leitura geral indica uma base que pode ser modernizada com governança e priorização adequadas. A decisão mais consistente é evitar um salto indiscriminado e trabalhar uma sequência progressiva de redução de dependências críticas, ajuste de compatibilidade e consolidação arquitetural, mantendo o objetivo de chegada em .NET 10 sem transformar a iniciativa em um programa de ruptura desnecessária.";
     }
 }

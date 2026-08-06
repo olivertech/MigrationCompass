@@ -68,6 +68,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     var irrelevantPackages = await IrrelevantPackageCatalog.LoadAsync(irrelevantPackagesPath, CancellationToken.None);
     var solutionScanner = new SolutionScanner();
     var apiScanner = new ApiScanner(rules);
+    var solidScanner = new SolidScanner();
     var nugetClient = new FlatContainerNuGetClient(new HttpClient
     {
         Timeout = TimeSpan.FromSeconds(20)
@@ -79,6 +80,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     var scanResult = await solutionScanner.ScanAsync(request, CancellationToken.None);
     scanResult.EconomicParameters = economicParameters;
     scanResult.ApiFindings.AddRange(await apiScanner.ScanAsync(scanResult.Projects, CancellationToken.None));
+    scanResult.SolidFindings.AddRange(await solidScanner.ScanAsync(scanResult.Projects, CancellationToken.None));
     scanResult.PackageFindings.AddRange(await nugetChecker.CheckAsync(scanResult.Projects, CancellationToken.None));
     scanResult.Summary = ReportSummaryBuilder.Build(scanResult);
     scanResult.Advisory = StrategyAdvisor.Build(scanResult);
