@@ -1,4 +1,4 @@
-using MigrationCompass.Models;
+﻿using MigrationCompass.Models;
 using MigrationCompass.Reporting;
 using MigrationCompass.Services;
 
@@ -20,7 +20,7 @@ internal sealed class SpecSuite
         await RunAsync("Gera parecer gerencial deterministico", TestStrategyAdvisorAsync, failures);
         await RunAsync("Gera HTML esperado", TestHtmlGeneratorAsync, failures);
         await RunAsync("Calcula faixa economica parametrizada", TestCostEstimatorAsync, failures);
-        await RunAsync("Detecta sinais heurísticos de SOLID", TestSolidScannerAsync, failures);
+        await RunAsync("Detecta sinais heurÃ­sticos de SOLID", TestSolidScannerAsync, failures);
         await RunAsync("NuGet offline vira aviso", TestNuGetOfflineFallbackAsync, failures);
         await RunAsync("Ignora pacotes irrelevantes", TestIrrelevantPackagesAsync, failures);
         await RunAsync("Aplica insight de negocio para pacote bloqueador", TestPackageBusinessInsightAsync, failures);
@@ -216,10 +216,10 @@ internal sealed class SpecSuite
 
         result.Advisory = StrategyAdvisor.Build(result);
         AssertTrue(result.Advisory is not null, "Parecer gerado");
-        AssertTrue(result.Advisory!.ScenarioNarrative.Contains("reconstrução", StringComparison.OrdinalIgnoreCase), "Narrativa do cenário");
-        AssertTrue(result.Advisory.RecommendedStrategy.Contains("Reconstrução", StringComparison.Ordinal), "Estratégia de reconstrução");
+        AssertTrue(result.Advisory!.ScenarioNarrative.Contains("reconstru", StringComparison.OrdinalIgnoreCase), "Narrativa do cenÃ¡rio");
+        AssertTrue(result.Advisory.RecommendedStrategy.Contains("Reconstru", StringComparison.OrdinalIgnoreCase), "EstratÃ©gia de reconstruÃ§Ã£o");
         AssertTrue(result.Advisory.DecisionDrivers.Count >= 4, "Drivers objetivos");
-        AssertTrue(result.Advisory.Paths.Any(path => path.IsRecommended && path.Title.Contains("Reconstrução", StringComparison.Ordinal)), "Caminho recomendado coerente");
+        AssertTrue(result.Advisory.Paths.Any(path => path.IsRecommended && path.Title.Contains("Reconstru", StringComparison.OrdinalIgnoreCase)), "Caminho recomendado coerente");
         return Task.CompletedTask;
     }
 
@@ -271,24 +271,24 @@ internal sealed class SpecSuite
             },
             Advisory = new SolutionAdvisory
             {
-                ExecutiveHeadline = "A solução apresenta distância tecnológica elevada para uma migração direta até .NET 10.",
-                ScenarioNarrative = "A distância tecnológica sugere que a melhor leitura é tratar a evolução como reconstrução gradual.",
-                RecommendedStrategy = "Reconstrução orientada por domínio, com convivência gradual entre legado e novos componentes.",
+                ExecutiveHeadline = "A soluÃ§Ã£o apresenta distÃ¢ncia tecnolÃ³gica elevada para uma migraÃ§Ã£o direta atÃ© .NET 10.",
+                ScenarioNarrative = "A distÃ¢ncia tecnolÃ³gica sugere que a melhor leitura Ã© tratar a evoluÃ§Ã£o como reconstruÃ§Ã£o gradual.",
+                RecommendedStrategy = "ReconstruÃ§Ã£o orientada por domÃ­nio, com convivÃªncia gradual entre legado e novos componentes.",
                 Rationale = "O volume de bloqueadores e o acoplamento ao legado tornam o salto direto pouco atrativo.",
-                ManagerialPositioning = "O caso se aproxima mais de um reposicionamento tecnológico do que de uma simples atualização de versão.",
+                ManagerialPositioning = "O caso se aproxima mais de um reposicionamento tecnolÃ³gico do que de uma simples atualizaÃ§Ã£o de versÃ£o.",
                 DistanceAssessment = "Toda a amostra permanece em .NET Framework legado.",
-                OpportunitySummary = "A organização deixa de capturar ganhos de observabilidade, segurança e simplificação operacional.",
+                OpportunitySummary = "A organizaÃ§Ã£o deixa de capturar ganhos de observabilidade, seguranÃ§a e simplificaÃ§Ã£o operacional.",
                 DecisionDrivers =
                 [
                     "1 projeto em .NET Framework 3.x/4.x.",
-                    "3 bloqueadores críticos relevantes."
+                    "3 bloqueadores crÃ­ticos relevantes."
                 ],
                 Paths =
                 [
                     new DecisionPathOption
                     {
-                        Title = "Migração direta para .NET 10",
-                        Fit = "Baixa aderência ao cenário atual.",
+                        Title = "MigraÃ§Ã£o direta para .NET 10",
+                        Fit = "Baixa aderÃªncia ao cenÃ¡rio atual.",
                         Effort = "Alto",
                         IndicativeRisk = "Alto",
                         Guidance = "Usar com cautela.",
@@ -296,11 +296,11 @@ internal sealed class SpecSuite
                     },
                     new DecisionPathOption
                     {
-                        Title = "Reconstrução gradual com convivência do legado",
-                        Fit = "Boa aderência ao cenário atual.",
-                        Effort = "Alto, porém mais previsível",
-                        IndicativeRisk = "Médio",
-                        Guidance = "Fatiar por domínio.",
+                        Title = "ReconstruÃ§Ã£o gradual com convivÃªncia do legado",
+                        Fit = "Boa aderÃªncia ao cenÃ¡rio atual.",
+                        Effort = "Alto, porÃ©m mais previsÃ­vel",
+                        IndicativeRisk = "MÃ©dio",
+                        Guidance = "Fatiar por domÃ­nio.",
                         IsRecommended = true
                     }
                 ]
@@ -355,27 +355,77 @@ internal sealed class SpecSuite
             Confidence = "Alta",
             TargetName = "LegacyManager",
             Evidence = "Classe com muitas linhas.",
-            Explanation = "Há indício de múltiplas responsabilidades concentradas.",
+            Explanation = "HÃ¡ indÃ­cio de mÃºltiplas responsabilidades concentradas.",
             Recommendation = "Dividir por responsabilidade.",
             LineNumber = 10
         });
 
+        result.SolidFindings.Add(new SolidFinding
+        {
+            ProjectName = "Legacy.Web",
+            FilePath = "Legacy.cs",
+            Principle = "DIP",
+            Severity = "Alto",
+            Confidence = "Alta",
+            TargetName = "LegacyManager",
+            Evidence = "Classe instancia dependencias concretas diretamente.",
+            Explanation = "Ha indicio de alto acoplamento a implementacoes concretas.",
+            Recommendation = "Inverter dependencias.",
+            LineNumber = 10
+        });
+
+        result.SolidFindings.Add(new SolidFinding
+        {
+            ProjectName = "Legacy.Web",
+            FilePath = "Legacy.cs",
+            Principle = "OCP",
+            Severity = "Alto",
+            Confidence = "Media",
+            TargetName = "LegacyManager",
+            Evidence = "Fluxo com decisoes extensas por condicao.",
+            Explanation = "Ha indicio de baixa extensibilidade sem alterar codigo existente.",
+            Recommendation = "Extrair estrategias.",
+            LineNumber = 10
+        });
+
+        result.SolidFindings.Add(new SolidFinding
+        {
+            ProjectName = "Legacy.Web",
+            FilePath = "Legacy.cs",
+            Principle = "LSP",
+            Severity = "Medio",
+            Confidence = "Baixa",
+            TargetName = "LegacyManager",
+            Evidence = "Substituicoes potencialmente frageis.",
+            Explanation = "Ha indicio de herancas com comportamento inconsistente.",
+            Recommendation = "Revisar hierarquia.",
+            LineNumber = 10
+        });
+
         var html = new HtmlReportGenerator().Generate(result);
-        AssertTrue(html.Contains("Relatório Executivo de Migração para .NET 10", StringComparison.Ordinal), "Cabecalho");
-        AssertTrue(html.Contains("Pontuação de risco: 100/100", StringComparison.Ordinal), "Score");
-        AssertTrue(html.Contains("Pontuação estrutural de manutenibilidade", StringComparison.Ordinal), "Score de manutenibilidade");
-        AssertTrue(html.Contains("Pontuação Estrutural de Manutenibilidade", StringComparison.Ordinal), "Secao manutenibilidade");
-        AssertTrue(html.Contains("Legenda gerencial da pontuação", StringComparison.Ordinal), "Legenda gerencial");
-        AssertTrue(html.Contains("85 a 100 - Crítica", StringComparison.Ordinal), "Faixa critica");
-        AssertTrue(html.Contains("Cenário Recomendado para Esta Solution", StringComparison.Ordinal), "Cenario recomendado");
-        AssertTrue(html.Contains("Bloqueadores Críticos", StringComparison.Ordinal), "Titulo executivo");
+        AssertTrue(html.Contains("RelatÃ³rio Executivo de MigraÃ§Ã£o para .NET 10", StringComparison.Ordinal), "Cabecalho");
+        AssertTrue(html.Contains("PontuaÃ§Ã£o de risco: 100/100", StringComparison.Ordinal), "Score");
+        AssertTrue(html.Contains("PontuaÃ§Ã£o estrutural de manutenibilidade", StringComparison.Ordinal), "Score de manutenibilidade");
+        AssertTrue(html.Contains("PontuaÃ§Ã£o Estrutural de Manutenibilidade", StringComparison.Ordinal), "Secao manutenibilidade");
+        AssertTrue(html.Contains("Legenda gerencial da pontuaÃ§Ã£o", StringComparison.Ordinal), "Legenda gerencial");
+        AssertTrue(html.Contains("85 a 100 - CrÃ­tica", StringComparison.Ordinal), "Faixa critica");
+        AssertTrue(html.Contains("CenÃ¡rio Recomendado para Esta Solution", StringComparison.Ordinal), "Cenario recomendado");
+        AssertTrue(html.Contains("Bloqueadores CrÃ­ticos", StringComparison.Ordinal), "Titulo executivo");
         AssertTrue(html.Contains("Leitura Gerencial", StringComparison.Ordinal), "Leitura gerencial");
-        AssertTrue(html.Contains("Caminhos Estratégicos Possíveis", StringComparison.Ordinal), "Caminhos estrategicos");
-        AssertTrue(html.Contains("Base técnica da leitura", StringComparison.Ordinal), "Base tecnica consultiva");
+        AssertTrue(html.Contains("Caminhos EstratÃ©gicos PossÃ­veis", StringComparison.Ordinal), "Caminhos estrategicos");
+        AssertTrue(html.Contains("Base tÃ©cnica da leitura", StringComparison.Ordinal), "Base tecnica consultiva");
         AssertTrue(html.Contains("Posicionamento recomendado", StringComparison.Ordinal), "Posicionamento recomendado");
         AssertTrue(html.Contains("HttpContext.Current aumenta acoplamento", StringComparison.Ordinal), "Impacto de negocio");
-        AssertTrue(html.Contains("Qualidade de Código e Sinais de Aderência ao SOLID", StringComparison.Ordinal), "Secao solid");
-        AssertTrue(html.Contains("Premissas Econômicas", StringComparison.Ordinal), "Premissas");
+        AssertTrue(html.Contains("SOLID", StringComparison.Ordinal), "Secao solid");
+        AssertTrue(html.Contains("Legenda Executiva dos Princípios SOLID", StringComparison.Ordinal), "Legenda solid");
+        AssertTrue(html.Contains("Single Responsibility Principle", StringComparison.Ordinal), "Definicao SRP");
+        AssertTrue(html.Contains("Dependency Inversion Principle", StringComparison.Ordinal), "Definicao DIP");
+        AssertTrue(html.Contains("Resumo por Princípio", StringComparison.Ordinal), "Resumo por principio");
+        AssertTrue(html.Contains("SRP, OCP, LSP, DIP", StringComparison.Ordinal), "Agregacao de principios por alvo");
+        AssertTrue(html.Contains("solid-badge-multi-4", StringComparison.Ordinal), "Badge multiplo principio");
+        AssertTrue(html.Contains("solid-multi-4-row", StringComparison.Ordinal), "Classe visual nivel 4");
+        AssertTrue(html.Contains("solid-multi-4-cell", StringComparison.Ordinal), "Borda visual nivel 4");
+        AssertTrue(html.Contains("Premissas EconÃ´micas", StringComparison.Ordinal), "Premissas");
         AssertTrue(html.Contains("Faixas orientativas para assessment inicial.", StringComparison.Ordinal), "Disclaimer");
         return Task.CompletedTask;
     }
@@ -684,7 +734,7 @@ public class LegacyManager
                 Impact = "Medio",
                 Effort = "Medio",
                 Alternative = "Revisar profiles",
-                BusinessImpact = "AutoMapper exige revisão de profiles.",
+                BusinessImpact = "AutoMapper exige revisÃ£o de profiles.",
                 MonthlyInactionCost = "R$ 2.000",
                 Docs = "https://docs.automapper.org/"
             },
@@ -698,7 +748,7 @@ public class LegacyManager
                 Impact = "Baixo",
                 Effort = "Baixo",
                 Alternative = "Validar sinks e hosting",
-                BusinessImpact = "Serilog demanda apenas alinhamento de configuração.",
+                BusinessImpact = "Serilog demanda apenas alinhamento de configuraÃ§Ã£o.",
                 MonthlyInactionCost = "R$ 800",
                 Docs = "https://serilog.net/"
             }
@@ -724,8 +774,8 @@ public class LegacyManager
         var findings = await checker.CheckAsync([project], CancellationToken.None);
         AssertEqual(3, findings.Count, "Novos pacotes catalogados");
         AssertTrue(findings.Any(finding => finding.PackageId == "NHibernate" && finding.BusinessImpact == "NHibernate aumenta discovery e risco de regressao."), "NHibernate reconhecido");
-        AssertTrue(findings.Any(finding => finding.PackageId == "AutoMapper.Extensions.Microsoft.DependencyInjection" && finding.BusinessImpact == "AutoMapper exige revisão de profiles."), "AutoMapper reconhecido");
-        AssertTrue(findings.Any(finding => finding.PackageId == "Serilog.AspNetCore" && finding.BusinessImpact == "Serilog demanda apenas alinhamento de configuração."), "Serilog reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "AutoMapper.Extensions.Microsoft.DependencyInjection" && finding.BusinessImpact == "AutoMapper exige revisÃ£o de profiles."), "AutoMapper reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "Serilog.AspNetCore" && finding.BusinessImpact == "Serilog demanda apenas alinhamento de configuraÃ§Ã£o."), "Serilog reconhecido");
     }
 
     private static async Task TestBroaderServerSideCatalogAsync()
@@ -742,7 +792,7 @@ public class LegacyManager
                 Impact = "Medio",
                 Effort = "Medio",
                 Alternative = "Revisar buses e consumers",
-                BusinessImpact = "MassTransit exige validação de contratos e filas.",
+                BusinessImpact = "MassTransit exige validaÃ§Ã£o de contratos e filas.",
                 MonthlyInactionCost = "R$ 4.000",
                 Docs = "https://masstransit.io/"
             },
@@ -756,7 +806,7 @@ public class LegacyManager
                 Impact = "Medio",
                 Effort = "Medio",
                 Alternative = "Revisar client e TLS",
-                BusinessImpact = "RabbitMQ.Client exige testes de conexão e reconexão.",
+                BusinessImpact = "RabbitMQ.Client exige testes de conexÃ£o e reconexÃ£o.",
                 MonthlyInactionCost = "R$ 3.000",
                 Docs = "https://rabbitmq.com/"
             },
@@ -769,7 +819,7 @@ public class LegacyManager
                 Category = "Validacao",
                 Impact = "Baixo",
                 Effort = "Baixo",
-                Alternative = "Revisar integração com DI",
+                Alternative = "Revisar integraÃ§Ã£o com DI",
                 BusinessImpact = "FluentValidation exige apenas ajustes de bootstrap.",
                 MonthlyInactionCost = "R$ 900",
                 Docs = "https://fluentvalidation.net/"
@@ -784,7 +834,7 @@ public class LegacyManager
                 Impact = "Baixo",
                 Effort = "Baixo",
                 Alternative = "Revisar handlers e behaviors",
-                BusinessImpact = "MediatR é mais ajuste de composição do que bloqueio estrutural.",
+                BusinessImpact = "MediatR Ã© mais ajuste de composiÃ§Ã£o do que bloqueio estrutural.",
                 MonthlyInactionCost = "R$ 700",
                 Docs = "https://github.com/jbogard/MediatR"
             },
@@ -798,7 +848,7 @@ public class LegacyManager
                 Impact = "Medio",
                 Effort = "Medio",
                 Alternative = "Mapear interceptors e proxies",
-                BusinessImpact = "Castle.Core pode exigir revisão de interceptação e AOP.",
+                BusinessImpact = "Castle.Core pode exigir revisÃ£o de interceptaÃ§Ã£o e AOP.",
                 MonthlyInactionCost = "R$ 2.500",
                 Docs = "https://castleproject.org/"
             }
@@ -825,11 +875,11 @@ public class LegacyManager
 
         var findings = await checker.CheckAsync([project], CancellationToken.None);
         AssertEqual(5, findings.Count, "Pacotes ampliados reconhecidos");
-        AssertTrue(findings.Any(finding => finding.PackageId == "MassTransit.RabbitMq" && finding.BusinessImpact == "MassTransit exige validação de contratos e filas."), "MassTransit reconhecido");
-        AssertTrue(findings.Any(finding => finding.PackageId == "RabbitMQ.Client" && finding.BusinessImpact == "RabbitMQ.Client exige testes de conexão e reconexão."), "RabbitMQ.Client reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "MassTransit.RabbitMq" && finding.BusinessImpact == "MassTransit exige validaÃ§Ã£o de contratos e filas."), "MassTransit reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "RabbitMQ.Client" && finding.BusinessImpact == "RabbitMQ.Client exige testes de conexÃ£o e reconexÃ£o."), "RabbitMQ.Client reconhecido");
         AssertTrue(findings.Any(finding => finding.PackageId == "FluentValidation.AspNetCore" && finding.BusinessImpact == "FluentValidation exige apenas ajustes de bootstrap."), "FluentValidation reconhecido");
-        AssertTrue(findings.Any(finding => finding.PackageId == "MediatR.Extensions.Microsoft.DependencyInjection" && finding.BusinessImpact == "MediatR é mais ajuste de composição do que bloqueio estrutural."), "MediatR reconhecido");
-        AssertTrue(findings.Any(finding => finding.PackageId == "Castle.Core" && finding.BusinessImpact == "Castle.Core pode exigir revisão de interceptação e AOP."), "Castle.Core reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "MediatR.Extensions.Microsoft.DependencyInjection" && finding.BusinessImpact == "MediatR Ã© mais ajuste de composiÃ§Ã£o do que bloqueio estrutural."), "MediatR reconhecido");
+        AssertTrue(findings.Any(finding => finding.PackageId == "Castle.Core" && finding.BusinessImpact == "Castle.Core pode exigir revisÃ£o de interceptaÃ§Ã£o e AOP."), "Castle.Core reconhecido");
     }
 
     private static async Task RunAsync(string name, Func<Task> test, List<string> failures)
@@ -887,3 +937,4 @@ public class LegacyManager
         }
     }
 }
+

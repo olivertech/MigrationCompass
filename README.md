@@ -239,6 +239,34 @@ dotnet run --project .\MigrationCompass.csproj -- --help
 dotnet run --project .\MigrationCompass.csproj -- --sln "C:\LegacyApps\MinhaSolucao.sln" --output ".\artifacts"
 ```
 
+### Escanear usando o `.exe` dentro da pasta de um projeto legado
+
+Exemplo de uso quando o executável publicado foi copiado para a mesma pasta onde está a solution legada:
+
+```powershell
+PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --sln ".\ContabilAppAPI.sln" --output ".\relatorio"
+```
+
+Esse comando:
+
+- executa o `MigrationCompass.exe` no diretório atual
+- analisa a solution `.\ContabilAppAPI.sln`
+- gera o relatório HTML na pasta `.\relatorio`
+
+### Escanear usando auto descoberta da solution
+
+Se existir apenas um arquivo `.sln` no diretório atual, o caminho da solution pode ser omitido:
+
+```powershell
+PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --output ".\relatorio"
+```
+
+### Observações para PowerShell
+
+- Use `.\MigrationCompass.exe` em vez de apenas `MigrationCompass.exe`.
+- Se houver mais de uma solution na pasta, informe `--sln` explicitamente.
+- Se o nome da solution estiver incorreto, o scanner retornará `Erro: Arquivo de solution nao encontrado`.
+
 ### Publicar como executável portátil
 
 ```powershell

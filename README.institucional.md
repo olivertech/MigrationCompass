@@ -88,6 +88,22 @@ O `MigrationCompass` é especialmente útil para:
 - sponsors de transformação digital
 - recrutadores técnicos interessados em projetos de arquitetura e tooling
 
+## Exemplo de Uso em Campo
+
+Em um cenário real, o executável pode ser copiado para dentro da pasta de uma solution legada e executado localmente, por exemplo:
+
+```powershell
+PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --sln ".\ContabilAppAPI.sln" --output ".\relatorio"
+```
+
+Nesse fluxo, a ferramenta:
+
+- analisa a solution legada no diretório atual
+- consolida achados técnicos relevantes para migração
+- gera um relatório HTML na pasta `.\relatorio`
+
+Se houver apenas uma solution `.sln` na pasta, a execução também pode ocorrer sem informar `--sln`.
+
 ## Estado Atual do Projeto
 
 Em `04/08/2026`, o projeto já possui um MVP funcional com:

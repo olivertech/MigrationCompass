@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using MigrationCompass.Models;
 using MigrationCompass.Reporting;
 using MigrationCompass.Services;
@@ -26,7 +26,7 @@ var rootCommand = new RootCommand("MigrationCompass")
     formatOption
 };
 
-// Centraliza a leitura dos argumentos e delega a execuÃ§Ã£o para o pipeline principal.
+// Centraliza a leitura dos argumentos e delega a execução para o pipeline principal.
 rootCommand.SetAction(async parseResult =>
 {
     var solutionFile = parseResult.GetValue(solutionOption);
@@ -37,7 +37,7 @@ rootCommand.SetAction(async parseResult =>
 
 return await rootCommand.Parse(args).InvokeAsync();
 
-// Orquestra o scan completo da solution e a geraÃ§Ã£o do relatÃ³rio final.
+// Orquestra o scan completo da solution e a geração do relatório final.
 static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDirectory, string format)
 {
     if (!string.Equals(format, "html", StringComparison.OrdinalIgnoreCase))
@@ -77,17 +77,40 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     var reportGenerator = new HtmlReportGenerator();
 
     var request = new ScanRequest(resolvedSolutionPath, resolvedOutputDirectory, format);
-    var scanResult = await solutionScanner.ScanAsync(request, CancellationToken.None);
+
+    WriteStep("Iniciando analise da solution...");
+    var scanResult = await ExecuteWithProgressAsync(
+        "Descobrindo solution e projetos",
+        () => solutionScanner.ScanAsync(request, CancellationToken.None));
+
     scanResult.EconomicParameters = economicParameters;
-    scanResult.ApiFindings.AddRange(await apiScanner.ScanAsync(scanResult.Projects, CancellationToken.None));
-    scanResult.SolidFindings.AddRange(await solidScanner.ScanAsync(scanResult.Projects, CancellationToken.None));
-    scanResult.PackageFindings.AddRange(await nugetChecker.CheckAsync(scanResult.Projects, CancellationToken.None));
+
+    WriteStep("Mapeando APIs legadas...");
+    scanResult.ApiFindings.AddRange(await ExecuteWithProgressAsync(
+        "Analisando uso de APIs legadas",
+        () => apiScanner.ScanAsync(scanResult.Projects, CancellationToken.None)));
+
+    WriteStep("Inspecionando sinais estruturais do codigo...");
+    scanResult.SolidFindings.AddRange(await ExecuteWithProgressAsync(
+        "Procurando sinais heurísticos de SOLID",
+        () => solidScanner.ScanAsync(scanResult.Projects, CancellationToken.None)));
+
+    WriteStep("Validando dependencias NuGet...");
+    scanResult.PackageFindings.AddRange(await ExecuteWithProgressAsync(
+        "Checando compatibilidade de pacotes",
+        () => nugetChecker.CheckAsync(scanResult.Projects, CancellationToken.None)));
+
+    WriteStep("Consolidando pontuacoes e recomendacoes...");
     scanResult.Summary = ReportSummaryBuilder.Build(scanResult);
     scanResult.Advisory = StrategyAdvisor.Build(scanResult);
 
+    WriteStep("Gerando relatorio HTML...");
     Directory.CreateDirectory(resolvedOutputDirectory);
-    var reportFilePath = reportGenerator.Write(scanResult, resolvedOutputDirectory);
+    var reportFilePath = await ExecuteWithProgressAsync(
+        "Escrevendo relatorio final",
+        () => Task.FromResult(reportGenerator.Write(scanResult, resolvedOutputDirectory)));
 
+    WriteSuccess("Analise concluida com sucesso.");
     Console.WriteLine($"Solution analisada: {Path.GetFileName(scanResult.SolutionPath)}");
     Console.WriteLine($"Projetos escaneados: {scanResult.Projects.Count}");
     Console.WriteLine($"Bloqueadores criticos: {scanResult.Summary.CriticalBlockers}");
@@ -96,7 +119,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     return 0;
 }
 
-// Resolve a solution de entrada a partir do parÃ¢metro explÃ­cito ou da auto descoberta local.
+// Resolve a solution de entrada a partir do parâmetro explícito ou da auto descoberta local.
 static string? ResolveSolutionPath(FileInfo? solutionFile)
 {
     if (solutionFile is not null)
@@ -119,4 +142,86 @@ static string? ResolveSolutionPath(FileInfo? solutionFile)
 
     Console.Error.WriteLine("Erro: Multiplas solutions encontradas no diretorio atual. Informe --sln explicitamente.");
     return null;
+}
+
+static async Task<T> ExecuteWithProgressAsync<T>(string message, Func<Task<T>> action)
+{
+    if (Console.IsOutputRedirected)
+    {
+        Console.WriteLine($"{message}...");
+        return await action();
+    }
+
+    using var progress = new ConsoleProgress(message);
+    return await action();
+}
+
+static void WriteStep(string message)
+{
+    Console.WriteLine();
+    Console.WriteLine($"> {message}");
+}
+
+static void WriteSuccess(string message)
+{
+    Console.WriteLine();
+    Console.WriteLine($"OK  {message}");
+}
+
+sealed class ConsoleProgress : IDisposable
+{
+    private static readonly char[] Frames = ['|', '/', '-', '\\'];
+    private readonly CancellationTokenSource _cancellation = new();
+    private readonly Task _renderTask;
+    private readonly string _message;
+    private bool _disposed;
+
+    public ConsoleProgress(string message)
+    {
+        _message = message;
+        _renderTask = Task.Run(RenderAsync);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _cancellation.Cancel();
+
+        try
+        {
+            _renderTask.Wait();
+        }
+        catch (AggregateException exception) when (exception.InnerExceptions.All(inner => inner is TaskCanceledException))
+        {
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
+        ClearCurrentLine();
+        Console.WriteLine($"OK  {_message}");
+        _cancellation.Dispose();
+    }
+
+    private async Task RenderAsync()
+    {
+        var index = 0;
+        while (!_cancellation.IsCancellationRequested)
+        {
+            Console.Write($"\r{Frames[index]} {_message}...");
+            index = (index + 1) % Frames.Length;
+            await Task.Delay(120, _cancellation.Token);
+        }
+    }
+
+    private static void ClearCurrentLine()
+    {
+        var width = Math.Max(Console.WindowWidth - 1, 20);
+        Console.Write("\r" + new string(' ', width) + "\r");
+    }
 }
