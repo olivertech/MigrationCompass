@@ -1,206 +1,215 @@
 # MigrationCompass
 
-O `MigrationCompass` é uma ferramenta de console em `.NET 10` voltada à análise técnica de soluções legadas e à geração de relatórios executivos para apoiar migrações até `.NET 10`.
+O `MigrationCompass` é uma ferramenta de console em `.NET 10` para análise local de solutions legadas, com foco em modernização até `.NET 10`, leitura executiva de risco e geração de relatório HTML defensável para arquitetura, gestão e assessment técnico.
 
-Este documento apresenta a visão técnica e detalhada do projeto. Para uma versão institucional, consulte `README.institucional.md`.
+Para uma visão resumida e institucional, consulte `README.institucional.md`.
 
 ## Objetivo
 
-O foco do `MigrationCompass` é escanear uma solution `.NET` e responder, com evidências:
+O projeto busca responder, com evidências técnicas e linguagem gerencial:
 
-- quais projetos estão mais distantes do alvo `.NET 10`
-- quais pacotes server-side podem bloquear ou encarecer a migração
-- quais APIs legadas exigirão refatoração
-- quais achados têm impacto mensurável em produção
+- quão distante a solution está de `.NET 10`
+- quais dependências server-side elevam risco, retrabalho ou custo de transição
+- quais APIs legadas exigirão refatoração relevante
+- quais sinais estruturais merecem revisão antes de qualquer programa de migração
+- quais cenários estratégicos parecem mais aderentes aos sinais encontrados
 
-## Escopo Atual
+## O que a ferramenta faz
 
-A versão atual já implementa:
+- descobre automaticamente `*.sln` e projetos `*.csproj`
+- lê `TargetFramework`, `TargetFrameworks` e `TargetFrameworkVersion`
+- classifica projetos de `.NET Framework 3.x/4.x`, `.NET Core 2.x/3.x` e `.NET 5` até `.NET 9`
+- analisa `PackageReference`, `Reference` e `packages.config`
+- detecta APIs legadas com base em `Rules/BlockingRules.json`
+- avalia compatibilidade de pacotes relevantes com `.NET 10`
+- ignora pacotes irrelevantes para runtime, como front-end, build e scaffolding
+- detecta sinais heurísticos de fragilidade estrutural organizados por `SRP`, `OCP`, `LSP`, `ISP` e `DIP`
+- exclui código gerado e scaffolding do score estrutural
+- gera relatório HTML executivo em PT-BR
 
-- descoberta de solution e projetos `.csproj`
-- leitura de `TargetFramework`, `TargetFrameworks` e `TargetFrameworkVersion`
-- leitura de `PackageReference`, `Reference` e `packages.config`
-- classificação de projetos desde `.NET Framework 3.x/4.x` até `.NET 9`
-- scanner de APIs legadas baseado em regras JSON
-- verificação de compatibilidade de pacotes com `.NET 10`
-- modelo econômico parametrizado para geração de faixas de custo orientativas
-- parecer gerencial determinístico com caminhos estratégicos de decisão
-- scanner heurístico de sinais de não conformidade com princípios SOLID
-- pontuação estrutural de manutenibilidade baseada em 4 vetores
-- fallback offline para cenários sem acesso ao NuGet
-- relatório HTML executivo focado em bloqueadores relevantes
-- suíte local de validação sem frameworks externos de teste
+## O que a ferramenta não faz
 
-## Arquitetura
+- não reescreve código automaticamente
+- não executa Roslyn nem análise semântica profunda nesta versão
+- não substitui assessment técnico detalhado de arquitetura
+- não gera orçamento fechado de projeto
+- não envia o código-fonte analisado para servidores do produto
+- não promete compatibilidade final apenas com base em regex, catálogos ou metadados
 
-### Fluxo principal
+## Privacidade e Rede
 
-1. A CLI recebe os parâmetros de entrada.
-2. A solution é localizada e os projetos `.csproj` são descobertos.
-3. Cada projeto é classificado pela distância até `.NET 10`.
-4. Dependências, referências e arquivos `.cs` são coletados.
-5. APIs legadas são avaliadas com base em `Rules/BlockingRules.json`.
-6. Pacotes NuGet relevantes são avaliados contra regras de catálogo e compatibilidade real.
-7. Os achados são consolidados em um relatório HTML executivo.
+- o código analisado permanece local durante o scan
+- somente metadados de pacotes podem ser consultados no `NuGet.org`, quando a validação online está habilitada
+- se o ambiente estiver offline, a execução continua e marca os pacotes como `Nao verificado offline`
 
-### Componentes centrais
+## Métricas Principais
 
-- `Program.cs`
-  - orquestra a execução ponta a ponta
-  - resolve a solution
-  - carrega regras e catálogos
-  - dispara scanners e gerador de relatório
+### Pontuação de risco
 
-- `Services/SolutionScanner.cs`
-  - descobre projetos
-  - extrai TFMs, referências e pacotes
-  - usa `Microsoft.Build` quando possível
-  - recorre a fallback em XML para projetos clássicos ou cenários single-file
+Score de `0` a `100` com saturação gradual, calculado com base em:
 
-- `Services/ApiScanner.cs`
-  - percorre arquivos `.cs`
-  - aplica regras regex vindas de `Rules/BlockingRules.json`
+- bloqueadores distintos
+- avisos distintos
+- diversidade de categorias críticas
+- quantidade de projetos
+- volume aproximado da base em `KLOC`
 
-- `Services/NuGetChecker.cs`
-  - consulta o feed do NuGet
-  - ignora pacotes irrelevantes para runtime
-  - cruza pacotes com catálogo server-side
-  - suporta famílias com curingas, como `Microsoft.Owin.*`
+Essa fórmula evita saturar rapidamente em `100` apenas por repetição do mesmo sintoma.
 
-- `Reporting/HtmlReportGenerator.cs`
-  - gera um HTML autocontido
-  - prioriza poucos bloqueadores críticos com impacto de negócio
+### Índice de fragilidade estrutural
 
-## Catálogo de Regras
+Score de `0` a `100`, em que `100` representa o pior cenário observado.
 
-O catálogo principal está em `Rules/BlockingRules.json`.
-
-Ele hoje cobre dois eixos:
-
-- APIs legadas, como:
-  - `System.Web.HttpContext.Current`
-  - `System.Web.Security.FormsAuthentication`
-  - `System.ServiceModel.*`
-- `System.Configuration.ConfigurationManager.AppSettings`
-
-Além das regras de API e pacote, o projeto agora também avalia sinais heurísticos de:
-
-- `SRP` (`Single Responsibility Principle`)
-- `OCP` (`Open/Closed Principle`)
-- `LSP` (`Liskov Substitution Principle`)
-- `ISP` (`Interface Segregation Principle`)
-- `DIP` (`Dependency Inversion Principle`)
-
-- pacotes server-side frequentes em projetos web legados, como:
-  - `Microsoft.AspNet.Mvc`
-  - `Microsoft.AspNet.WebApi.*`
-  - `Microsoft.AspNet.SignalR.*`
-  - `Microsoft.Owin.*`
-  - `Microsoft.AspNet.Identity.*`
-  - `EntityFramework`
-  - `NHibernate*`
-  - `AutoMapper*`
-  - `Serilog*`
-  - `Hangfire.*`
-  - `Quartz.*`
-  - `log4net`
-  - `NLog.*`
-  - `Elmah*`
-
-Cada regra pode incluir:
-
-- `impact`
-- `effort`
-- `alternative`
-- `businessImpact`
-- `monthlyInactionCost`
-- `docs`
-- `economicProfile` para ajustes finos de cálculo econômico por regra
-
-As premissas econômicas globais ficam em `Rules/EconomicParameters.json`.
-
-## Compatibilidade de Pacotes
-
-O scanner avalia apenas pacotes que podem afetar a migração de runtime.
-
-### Pacotes ignorados
-
-Pacotes client-side, de front-end ou de build não entram como bloqueadores estruturais, por exemplo:
-
-- `jquery`
-- `bootstrap`
-- `modernizr`
-- `webgrease`
-- `microsoft.typescript.msbuild`
-
-Essa lista é mantida em `Rules/IrrelevantPackages.json`.
-
-### Pacotes relevantes
-
-Para pacotes server-side, o `NuGetChecker` combina:
-
-- regra de catálogo do projeto
-- compatibilidade real de assets/TFMs no NuGet
-- fallback offline quando o feed não está acessível
-
-Isso permite separar melhor:
-
-- ruído operacional
-- alertas de atualização
-- bloqueadores de modernização
-
-## Modelo Econômico
-
-O relatório não depende mais apenas de faixas textuais curadas no catálogo.
-
-Agora o custo estimado de inação é gerado a partir de premissas configuráveis em `Rules/EconomicParameters.json`, como:
-
-- custo/hora estimado
-- semanas por mês
-- bandas de esforço baixo, médio e alto
-- tamanho de equipe
-- custo mensal de infraestrutura
-- multiplicadores de risco operacional
-
-O cálculo gera uma **faixa orientativa**, e não um valor fechado. A proposta é apoiar priorização e discovery, preservando transparência sobre as premissas adotadas.
-
-## Pontuação Estrutural de Manutenibilidade
-
-O relatório agora também apresenta uma pontuação estrutural de manutenibilidade de `0` a `100`, calculada a partir de quatro vetores:
+A composição atual considera quatro vetores:
 
 - risco de migração
-- densidade de sinais heurísticos de SOLID
-- idade tecnológica da base
+- densidade de sinais estruturais
+- idade tecnológica
 - acoplamento a legado
 
-Essa métrica busca refletir o custo estrutural de manter, adaptar e evoluir a solution, indo além do esforço pontual de atualização de framework.
+Leitura gerencial:
 
-## Relatório HTML
+- `0 a 39` — Controlável
+- `40 a 64` — Moderada
+- `65 a 84` — Alta
+- `85 a 100` — Crítica
 
-O relatório gerado contém:
+## Estrutura de Saída do Relatório
+
+O HTML gerado prioriza:
 
 - resumo executivo da solution
-- leitura gerencial com recomendação estratégica
-- cenário recomendado para a solution em texto corrido, com tom executivo
-- drivers objetivos da decisão
-- caminhos possíveis entre migração direta, modernização incremental e reconstrução gradual
 - pontuação de risco
-- até 4 bloqueadores críticos com impacto mensurável
-- sinais estruturais de fragilidade de código relacionados a SOLID
-- panorama dos projetos escaneados
-- observações sobre pacotes não verificados offline
+- índice de fragilidade estrutural
+- bloqueadores críticos relevantes
+- exposição econômica orientativa por cenário
+- sinais estruturais que merecem revisão
+- drivers da decisão
+- caminhos estratégicos possíveis
+- panorama dos projetos
+- artefatos gerados ou de scaffolding identificados
 
-### Fórmula de risco
+## Exposição Econômica
 
-```text
-((BloqueadoresCriticos * 12) + (Avisos * 6)) / TotalProjetos * 10
+O relatório não apresenta mais custo mensal unitário por bloqueador individual.
+
+Em vez disso, consolida cenários orientativos, como:
+
+- sustentação operacional
+- perda de produtividade
+- atraso de entregas
+- infraestrutura
+- segurança e conformidade
+
+Importante:
+
+- não é orçamento
+- não é soma direta por item
+- é insumo inicial para priorização e aprofundamento do assessment
+
+As premissas ficam em `Rules/EconomicParameters.json`.
+
+## Catálogos e Regras
+
+- `Rules/BlockingRules.json`
+  - APIs legadas
+  - pacotes server-side relevantes
+  - impactos de negócio
+  - alternativas de modernização
+- `Rules/IrrelevantPackages.json`
+  - pacotes ignorados por não afetarem runtime
+- `Rules/EconomicParameters.json`
+  - parâmetros econômicos globais
+
+Exemplos de famílias hoje cobertas:
+
+- `Microsoft.AspNet.Mvc`
+- `Microsoft.AspNet.WebApi.*`
+- `Microsoft.AspNet.SignalR.*`
+- `Microsoft.Owin.*`
+- `Microsoft.AspNet.Identity.*`
+- `EntityFramework`
+- `NHibernate*`
+- `AutoMapper*`
+- `Serilog*`
+- `NLog*`
+- `log4net`
+- `Hangfire.*`
+- `Quartz.*`
+- `Elmah*`
+
+## Requisitos
+
+### Para desenvolvimento
+
+- Windows com `PowerShell`
+- SDK `.NET 10`
+
+### Para distribuição
+
+Há dois modos principais:
+
+- `framework-dependent`
+  - exige runtime compatível instalado na máquina
+- `self-contained single-file`
+  - gera `exe` portátil maior, sem dependência de runtime pré-instalado
+
+## Como executar
+
+### Ajuda
+
+```powershell
+dotnet run --project .\MigrationCompass.csproj -- --help
 ```
 
-Regras:
+### Executar apontando a solution
 
-- o valor máximo é `100`
-- impactos `Alto` contam como bloqueadores críticos
-- impactos `Médio` e `Baixo` contam como avisos
+```powershell
+dotnet run --project .\MigrationCompass.csproj -- --sln "C:\LegacyApps\MinhaSolucao.sln" --output ".\artifacts"
+```
+
+### Executar por autodetecção
+
+Se houver apenas um arquivo `.sln` no diretório atual:
+
+```powershell
+dotnet run --project .\MigrationCompass.csproj -- --output ".\artifacts"
+```
+
+### Rodar o `.exe` dentro da pasta da solution legada
+
+Exemplo real de uso local, com o executável publicado copiado para a pasta do legado:
+
+```powershell
+PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --sln ".\ContabilAppAPI.sln" --output ".\relatorio"
+```
+
+Esse comando:
+
+- executa o `MigrationCompass.exe` no diretório atual
+- analisa a solution `.\ContabilAppAPI.sln`
+- gera o HTML em `.\relatorio`
+
+### Publish self-contained single-file
+
+```powershell
+dotnet publish .\MigrationCompass.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+```
+
+## Exemplo Anonimizado de Uso
+
+Entrada:
+
+```powershell
+.\MigrationCompass.exe --sln ".\SistemaLegado.sln" --output ".\relatorio"
+```
+
+Saída esperada:
+
+- identificação dos projetos e TFMs
+- bloqueadores relevantes de runtime e web legado
+- leitura consultiva do cenário
+- relatório HTML pronto para discussão com liderança técnica e gestão
 
 ## Estrutura do Repositório
 
@@ -225,91 +234,16 @@ MigrationCompass/
 - `NuGet.Protocol 7.6.0`
 - `System.CommandLine 2.0.10`
 
-## Como Executar
-
-### Exibir ajuda
+## Testes
 
 ```powershell
-dotnet run --project .\MigrationCompass.csproj -- --help
+dotnet run --project .\MigrationCompass.Specs\MigrationCompass.Specs.csproj -c Release
 ```
 
-### Escanear uma solution
+## Licenciamento Atual
 
-```powershell
-dotnet run --project .\MigrationCompass.csproj -- --sln "C:\LegacyApps\MinhaSolucao.sln" --output ".\artifacts"
-```
+No estado atual deste repositório, não há licença open source de redistribuição pública. O material deve ser tratado como uso restrito do mantenedor, salvo autorização explícita em sentido diverso.
 
-### Escanear usando o `.exe` dentro da pasta de um projeto legado
+## Observação de Posicionamento
 
-Exemplo de uso quando o executável publicado foi copiado para a mesma pasta onde está a solution legada:
-
-```powershell
-PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --sln ".\ContabilAppAPI.sln" --output ".\relatorio"
-```
-
-Esse comando:
-
-- executa o `MigrationCompass.exe` no diretório atual
-- analisa a solution `.\ContabilAppAPI.sln`
-- gera o relatório HTML na pasta `.\relatorio`
-
-### Escanear usando auto descoberta da solution
-
-Se existir apenas um arquivo `.sln` no diretório atual, o caminho da solution pode ser omitido:
-
-```powershell
-PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --output ".\relatorio"
-```
-
-### Observações para PowerShell
-
-- Use `.\MigrationCompass.exe` em vez de apenas `MigrationCompass.exe`.
-- Se houver mais de uma solution na pasta, informe `--sln` explicitamente.
-- Se o nome da solution estiver incorreto, o scanner retornará `Erro: Arquivo de solution nao encontrado`.
-
-### Publicar como executável portátil
-
-```powershell
-dotnet publish .\MigrationCompass.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
-```
-
-## Validação Local
-
-### Build
-
-```powershell
-dotnet build .\MigrationCompass.csproj
-```
-
-### Executar os testes locais
-
-```powershell
-dotnet run --project .\MigrationCompass.Specs\MigrationCompass.Specs.csproj
-```
-
-### Executar o scan da fixture local
-
-```powershell
-dotnet run --project .\MigrationCompass.csproj -- --sln ".\Fixtures\SampleLegacySolution\SampleLegacySolution.sln" --output ".\artifacts"
-```
-
-## Limitações Atuais
-
-- suporte apenas a projetos `.csproj`
-- saída apenas em HTML
-- ausência de correções automáticas
-- ausência de integração nativa com pipeline CI/CD
-- scanner de APIs baseado em regex
-- análise NuGet dependente de metadados remotos quando online
-
-## Próximas Evoluções
-
-- separar o catálogo por domínios, como `web`, `auth`, `data` e `observability`
-- ampliar análise de dependências transitivas
-- exportar também em JSON ou CSV
-- comparar execuções históricas
-- adicionar um modo opcional com análise semântica via Roslyn
-
-## Licença
-
-Defina aqui a licença oficial do repositório antes da publicação no GitHub.
+O relatório gerado é orientativo. Ele ajuda a estruturar discovery, priorização e conversas executivas, mas não encerra sozinho uma decisão de investimento, replatforming ou reconstrução.

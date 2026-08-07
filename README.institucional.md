@@ -1,129 +1,54 @@
 # MigrationCompass
 
-O `MigrationCompass` é uma ferramenta de análise de legado criada para apoiar decisões de modernização em ambientes `.NET`, traduzindo sinais técnicos em uma leitura executiva clara sobre risco, bloqueios e esforço de migração até `.NET 10`.
+O `MigrationCompass` é uma ferramenta de análise local de sistemas legados `.NET` criada para apoiar decisões de modernização com uma leitura mais confiável, objetiva e executiva sobre risco, fragilidade estrutural e caminhos possíveis até `.NET 10`.
 
 ## Proposta de Valor
 
-Em programas de modernização, não basta saber que o sistema é legado. É preciso entender:
+Em programas de modernização, o maior desafio nem sempre é identificar que o sistema é antigo. O desafio real é traduzir sinais técnicos em uma leitura que gestores, arquitetos e sponsors consigam usar para decidir com mais segurança.
 
-- onde estão os principais bloqueadores
-- quanto esse legado custa para evoluir
-- quais frentes exigem mais investimento
-- quais riscos podem afetar prazo, operação e estabilidade
+O `MigrationCompass` foi desenhado para isso.
 
-O `MigrationCompass` foi concebido para responder a essas perguntas com um relatório objetivo, acionável e orientado à tomada de decisão.
-
-## O que a solução entrega
+## O que ele entrega
 
 - leitura automatizada de solutions e projetos `.NET`
-- classificação de maturidade de migração
 - identificação de APIs legadas e dependências server-side críticas
-- separação entre ruído técnico e bloqueadores reais
-- relatório HTML executivo pronto para discussão com arquitetura, gestão e sponsors
-- faixas de custo orientativas baseadas em premissas configuráveis
-- leitura consultiva com caminhos estratégicos possíveis para decisão
-- avaliação heurística de fragilidades estruturais associadas a princípios SOLID
-- pontuação estrutural de manutenibilidade para apoiar priorização executiva
-
-## Destaques atuais
-
-A versão atual do projeto já cobre cenários frequentes em aplicações web legadas, incluindo:
-
-- `ASP.NET MVC 5`
-- `ASP.NET Web API 2`
-- `OWIN/Katana`
-- `ASP.NET Identity`
-- `SignalR`
-- `Entity Framework 6`
-- `NHibernate`
-- `AutoMapper`
-- `Serilog`, `NLog` e `log4net`
-- `Hangfire`, `Quartz` e observabilidade legado
-
-Com isso, o relatório consegue refletir não apenas problemas de compatibilidade, mas também frentes típicas de retrabalho em sistemas corporativos reais.
-
-## Como o custo é tratado
-
-O projeto passa a trabalhar com **faixas orientativas de custo estimado de inação**, construídas a partir de premissas explícitas de esforço técnico, composição de equipe e exposição operacional.
-
-Isso ajuda a tornar o relatório mais confiável para conversas iniciais com liderança, sem prometer uma precisão financeira que só faria sentido em uma avaliação mais aprofundada.
-
-## Valor para Stakeholders
-
-O projeto ajuda lideranças a responder perguntas estratégicas:
-
-- Quais aplicações devem entrar primeiro na jornada de modernização?
-- Onde há maior risco de custo oculto?
-- Quais dependências exigirão replanejamento técnico?
-- Em quais pontos a inação já representa custo operacional ou risco de SLA?
-- Quando ainda faz sentido migrar e quando a reconstrução gradual passa a ser uma alternativa mais racional?
-- Quais sinais de complexidade estrutural do código podem encarecer ou inviabilizar a evolução do legado?
-
-## Valor para Recrutadores Técnicos
-
-Este repositório demonstra competências práticas em:
-
-- arquitetura de ferramentas internas
-- engenharia de plataforma em `.NET`
-- análise de sistemas legados
-- desenho de CLI
-- geração de artefatos executivos a partir de evidências técnicas
-- equilíbrio entre profundidade de engenharia e clareza de comunicação
+- separação entre ruído técnico e bloqueadores relevantes
+- índice de fragilidade estrutural para apoiar priorização
+- exposição econômica orientativa por cenário
+- relatório HTML executivo em PT-BR
 
 ## Diferenciais
 
 - execução local
-- foco em `.NET 10`
-- baixo acoplamento
-- catálogo extensível de APIs e pacotes legados
-- visão executiva com impacto de negócio e custo estimado de inação
+- foco específico em modernização até `.NET 10`
+- leitura consultiva com linguagem menos genérica
+- exclusão de scaffolding e código gerado do score estrutural
+- taxonomia SOLID usada como apoio analítico, não como veredito absoluto
 
-## Perfil de Uso
+## Privacidade
 
-O `MigrationCompass` é especialmente útil para:
+- o código analisado não é enviado para servidores do produto
+- somente metadados de pacotes podem ser consultados no `NuGet.org`, quando disponível
+- o scanner continua funcionando offline, sinalizando limitações de validação quando necessário
+
+## Para quem faz sentido
 
 - arquitetos de software
 - tech leads
-- consultores de modernização
+- consultorias de modernização
 - sponsors de transformação digital
-- recrutadores técnicos interessados em projetos de arquitetura e tooling
+- recrutadores técnicos avaliando profundidade de engenharia e visão de produto
 
-## Exemplo de Uso em Campo
-
-Em um cenário real, o executável pode ser copiado para dentro da pasta de uma solution legada e executado localmente, por exemplo:
+## Exemplo de uso em campo
 
 ```powershell
 PS E:\2-PROJETOS\6IX\Projetos\GIT-API> .\MigrationCompass.exe --sln ".\ContabilAppAPI.sln" --output ".\relatorio"
 ```
 
-Nesse fluxo, a ferramenta:
+## Leitura importante
 
-- analisa a solution legada no diretório atual
-- consolida achados técnicos relevantes para migração
-- gera um relatório HTML na pasta `.\relatorio`
+O relatório não substitui um assessment aprofundado. Ele funciona como instrumento inicial de triagem, priorização e preparação para uma avaliação técnica e de negócio mais detalhada.
 
-Se houver apenas uma solution `.sln` na pasta, a execução também pode ocorrer sem informar `--sln`.
+## Documento técnico
 
-## Estado Atual do Projeto
-
-Em `04/08/2026`, o projeto já possui um MVP funcional com:
-
-- scanner de projetos `.csproj`
-- análise de TFMs desde `.NET Framework 3.x/4.x` até `.NET 9`
-- classificação de risco para migração ao alvo `.NET 10`
-- catálogo ampliado de dependências server-side web
-- modelo econômico parametrizado por faixas
-- fallback offline para análise de pacotes
-- relatório HTML executivo
-
-## Próximos Passos Possíveis
-
-- segmentar o catálogo por domínios de arquitetura
-- ampliar análise de dependências transitivas
-- adicionar exportação JSON/CSV
-- comparar execuções históricas
-- aprofundar análise semântica opcional com Roslyn
-
-## Documento Técnico
-
-Para detalhes de arquitetura, execução, componentes, validação e estrutura do código, consulte `README.md`.
+Para detalhes de arquitetura, métricas, execução, publicação e testes, consulte `README.md`.

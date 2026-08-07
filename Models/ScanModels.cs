@@ -17,6 +17,8 @@ public sealed class SolutionScanResult
     public List<ApiFinding> ApiFindings { get; } = [];
     public List<PackageCompatibilityFinding> PackageFindings { get; } = [];
     public List<SolidFinding> SolidFindings { get; } = [];
+    public List<GeneratedArtifactInfo> GeneratedArtifacts { get; } = [];
+    public List<EconomicExposureScenario> EconomicExposureScenarios { get; } = [];
     public EconomicParameters? EconomicParameters { get; set; }
     public SolutionAdvisory? Advisory { get; set; }
     public ReportSummary Summary { get; set; } = new();
@@ -98,6 +100,7 @@ public sealed class PackageCompatibilityFinding
     public required string ProjectName { get; init; }
     public required string PackageId { get; init; }
     public required string RequestedVersion { get; init; }
+    public string Category { get; init; } = "Compatibilidade de pacote";
     public required string Status { get; init; }
     public required string Impact { get; init; }
     public required string Recommendation { get; init; }
@@ -161,6 +164,28 @@ public sealed class MonthlyCostRange
 {
     public required decimal Min { get; init; }
     public required decimal Max { get; init; }
+}
+
+/// <summary>
+/// Representa um artefato gerado, de scaffolding ou de infraestrutura que foi excluído da análise estrutural principal.
+/// </summary>
+public sealed class GeneratedArtifactInfo
+{
+    public required string ProjectName { get; init; }
+    public required string FilePath { get; init; }
+    public required string Category { get; init; }
+    public required string Reason { get; init; }
+}
+
+/// <summary>
+/// Representa uma faixa orientativa de exposição econômica agregada por cenário de impacto.
+/// </summary>
+public sealed class EconomicExposureScenario
+{
+    public required string Title { get; init; }
+    public required string Summary { get; init; }
+    public required MonthlyCostRange Range { get; init; }
+    public int Signals { get; init; }
 }
 
 /// <summary>

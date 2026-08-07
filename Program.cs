@@ -58,6 +58,9 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
         return 1;
     }
 
+    ClearConsoleForInteractiveRun();
+    WriteConsoleHeader(resolvedSolutionPath);
+
     var resolvedOutputDirectory = outputDirectory?.FullName ?? Directory.GetCurrentDirectory();
 
     var rulesPath = Path.Combine(AppContext.BaseDirectory, "Rules", "BlockingRules.json");
@@ -75,6 +78,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
     });
     var nugetChecker = new NuGetChecker(nugetClient, rules, irrelevantPackages);
     var reportGenerator = new HtmlReportGenerator();
+    var costEstimator = new CostEstimator(economicParameters);
 
     var request = new ScanRequest(resolvedSolutionPath, resolvedOutputDirectory, format);
 
@@ -102,6 +106,7 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
 
     WriteStep("Consolidando pontuacoes e recomendacoes...");
     scanResult.Summary = ReportSummaryBuilder.Build(scanResult);
+    scanResult.EconomicExposureScenarios.AddRange(EconomicExposureBuilder.Build(scanResult, costEstimator));
     scanResult.Advisory = StrategyAdvisor.Build(scanResult);
 
     WriteStep("Gerando relatorio HTML...");
@@ -111,11 +116,11 @@ static async Task<int> RunAsync(FileInfo? solutionFile, DirectoryInfo? outputDir
         () => Task.FromResult(reportGenerator.Write(scanResult, resolvedOutputDirectory)));
 
     WriteSuccess("Analise concluida com sucesso.");
-    Console.WriteLine($"Solution analisada: {Path.GetFileName(scanResult.SolutionPath)}");
-    Console.WriteLine($"Projetos escaneados: {scanResult.Projects.Count}");
-    Console.WriteLine($"Bloqueadores criticos: {scanResult.Summary.CriticalBlockers}");
-    Console.WriteLine($"Avisos: {scanResult.Summary.Warnings}");
-    Console.WriteLine($"Relatorio gerado em: {reportFilePath}");
+    WriteInfoLine("Solution analisada", Path.GetFileName(scanResult.SolutionPath));
+    WriteInfoLine("Projetos escaneados", scanResult.Projects.Count.ToString());
+    WriteInfoLine("Bloqueadores criticos", scanResult.Summary.CriticalBlockers.ToString());
+    WriteInfoLine("Avisos", scanResult.Summary.Warnings.ToString());
+    WriteInfoLine("Relatorio gerado em", reportFilePath);
     return 0;
 }
 
@@ -156,16 +161,103 @@ static async Task<T> ExecuteWithProgressAsync<T>(string message, Func<Task<T>> a
     return await action();
 }
 
+static void ClearConsoleForInteractiveRun()
+{
+    if (Console.IsOutputRedirected || Console.IsErrorRedirected)
+    {
+        return;
+    }
+
+    try
+    {
+        Console.Clear();
+    }
+    catch (IOException)
+    {
+    }
+
+    try
+    {
+        Console.Write("\u001b[3J\u001b[2J\u001b[H");
+    }
+    catch (IOException)
+    {
+    }
+}
+
+static void WriteConsoleHeader(string solutionPath)
+{
+    if (Console.IsOutputRedirected || Console.IsErrorRedirected)
+    {
+        return;
+    }
+
+    WriteColoredLine("========================================================================", ConsoleColor.DarkGray);
+    WriteColoredLine(" MIGRATIONCOMPASS", ConsoleColor.Cyan);
+    WriteColoredLine(" Scanner executivo de legado .NET para migracao ate .NET 10", ConsoleColor.Gray);
+    WriteColoredLine("------------------------------------------------------------------------", ConsoleColor.DarkGray);
+    WriteLabelValueLine(" Inicio do processamento ", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"), ConsoleColor.DarkGray, ConsoleColor.White);
+    WriteLabelValueLine(" Solution alvo           ", Path.GetFileName(solutionPath), ConsoleColor.DarkGray, ConsoleColor.Yellow);
+    WriteColoredLine("========================================================================", ConsoleColor.DarkGray);
+    Console.WriteLine();
+}
+
 static void WriteStep(string message)
 {
     Console.WriteLine();
-    Console.WriteLine($"> {message}");
+    WriteColoredLine($"> {message}", ConsoleColor.Cyan);
 }
 
 static void WriteSuccess(string message)
 {
     Console.WriteLine();
-    Console.WriteLine($"OK  {message}");
+    WriteColoredLine($"OK  {message}", ConsoleColor.Green);
+}
+
+static void WriteInfoLine(string label, string value)
+{
+    if (Console.IsOutputRedirected || Console.IsErrorRedirected)
+    {
+        Console.WriteLine($"{label}: {value}");
+        return;
+    }
+
+    var originalColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.DarkGray;
+    Console.Write($"{label}: ");
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.WriteLine(value);
+    Console.ForegroundColor = originalColor;
+}
+
+static void WriteLabelValueLine(string label, string value, ConsoleColor labelColor, ConsoleColor valueColor)
+{
+    if (Console.IsOutputRedirected || Console.IsErrorRedirected)
+    {
+        Console.WriteLine($"{label}: {value}");
+        return;
+    }
+
+    var originalColor = Console.ForegroundColor;
+    Console.ForegroundColor = labelColor;
+    Console.Write($"{label}: ");
+    Console.ForegroundColor = valueColor;
+    Console.WriteLine(value);
+    Console.ForegroundColor = originalColor;
+}
+
+static void WriteColoredLine(string message, ConsoleColor color)
+{
+    if (Console.IsOutputRedirected || Console.IsErrorRedirected)
+    {
+        Console.WriteLine(message);
+        return;
+    }
+
+    var originalColor = Console.ForegroundColor;
+    Console.ForegroundColor = color;
+    Console.WriteLine(message);
+    Console.ForegroundColor = originalColor;
 }
 
 sealed class ConsoleProgress : IDisposable
@@ -204,7 +296,10 @@ sealed class ConsoleProgress : IDisposable
         }
 
         ClearCurrentLine();
+        var originalColor = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"OK  {_message}");
+        Console.ForegroundColor = originalColor;
         _cancellation.Dispose();
     }
 

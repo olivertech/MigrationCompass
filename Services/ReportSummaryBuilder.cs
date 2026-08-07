@@ -8,7 +8,7 @@ namespace MigrationCompass.Services;
 public static class ReportSummaryBuilder
 {
     /// <summary>
-    /// Calcula totais, pontuação de risco e pontuação estrutural de manutenibilidade.
+    /// Calcula totais, pontuação de risco e índice de fragilidade estrutural.
     /// </summary>
     public static ReportSummary Build(SolutionScanResult result)
     {
@@ -20,9 +20,7 @@ public static class ReportSummaryBuilder
         var blockers = apiBlockers + packageBlockers;
         var warnings = apiWarnings + packageWarnings;
         var info = result.PackageFindings.Count - packageBlockers - packageWarnings;
-        var totalProjects = Math.Max(result.Projects.Count, 1);
-        var rawRiskScore = ((blockers * 12.0) + (warnings * 6.0)) / totalProjects * 10.0;
-        var riskScore = ClampScore(rawRiskScore);
+        var riskScore = CalculateRiskScore(result);
 
         return new ReportSummary
         {
@@ -91,10 +89,10 @@ public static class ReportSummaryBuilder
 
         var summary = classification switch
         {
-            "Crítica" => "A solution combina legado tecnológico, forte acoplamento e sinais estruturais que tendem a elevar significativamente o custo de manutenção e mudança.",
-            "Alta" => "A base atual apresenta barreiras relevantes de evolução e deve ser tratada com governança, priorização e redução progressiva de complexidade estrutural.",
-            "Moderada" => "Há pontos relevantes de manutenção, mas o cenário ainda permite modernização progressiva com risco controlado quando bem priorizada.",
-            _ => "A estrutura observada é relativamente mais controlável, embora continue exigindo disciplina técnica para sustentar a evolução."
+            "Crítica" => "A solution combina legado tecnológico, forte acoplamento e sinais estruturais que elevam de forma importante a fragilidade da base para manter, adaptar e evoluir.",
+            "Alta" => "A base atual apresenta fragilidades estruturais relevantes e deve ser tratada com governança, priorização e redução progressiva de complexidade.",
+            "Moderada" => "Há fragilidades relevantes, mas o cenário ainda permite modernização progressiva com risco controlado quando bem priorizada.",
+            _ => "A fragilidade estrutural observada é relativamente mais controlável, embora a base ainda exija disciplina técnica para sustentar evolução."
         };
 
         return new MaintainabilityAssessment
@@ -108,7 +106,7 @@ public static class ReportSummaryBuilder
                 RawScore = migrationRiskRaw,
                 WeightedScore = migrationRiskWeighted,
                 WeightPercent = migrationRiskWeight,
-                Explanation = $"Reflete a pressão acumulada de bloqueadores e avisos já identificados no caminho até .NET 10. Score bruto atual: {migrationRiskRaw}/100."
+                Explanation = $"Reflete a pressão acumulada de bloqueadores distintos, avisos recorrentes e diversidade de frentes críticas no caminho até .NET 10. Score bruto atual: {migrationRiskRaw}/100."
             },
             SolidDensity = new MaintainabilityComponent
             {
@@ -135,6 +133,66 @@ public static class ReportSummaryBuilder
                 Explanation = $"Mede a incidência de dependências e APIs fortemente associadas ao legado web clássico e a componentes com alta inércia estrutural. Sinais por projeto: {couplingSignalPerProject:0.0}."
             }
         };
+    }
+
+    private static int CalculateRiskScore(SolutionScanResult result)
+    {
+        var criticalUnits = result.ApiFindings
+            .Where(finding => string.Equals(finding.Rule.Impact, "Alto", StringComparison.OrdinalIgnoreCase))
+            .Select(finding => $"{finding.ProjectName}|API|{finding.Rule.Id}")
+            .Concat(result.PackageFindings
+                .Where(finding => finding.IsBlocker)
+                .Select(finding => $"{finding.ProjectName}|PKG|{finding.PackageId}"))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        var warningUnits = result.ApiFindings
+            .Where(finding => IsWarningImpact(finding.Rule.Impact))
+            .Select(finding => $"{finding.ProjectName}|API|{finding.Rule.Id}")
+            .Concat(result.PackageFindings
+                .Where(finding => finding.IsWarning)
+                .Select(finding => $"{finding.ProjectName}|PKG|{finding.PackageId}"))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        var diversityUnits = result.ApiFindings
+            .Where(finding => string.Equals(finding.Rule.Impact, "Alto", StringComparison.OrdinalIgnoreCase))
+            .Select(finding => finding.Rule.Category)
+            .Concat(result.PackageFindings
+                .Where(finding => finding.IsBlocker)
+                .Select(finding => finding.Category))
+            .Where(category => !string.IsNullOrWhiteSpace(category))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        var projectFactor = Math.Max(1, result.Projects.Count);
+        var totalCodeLines = CountTotalCodeLines(result);
+        var klocFactor = Math.Max(1.0, totalCodeLines / 1000.0);
+        var pressure = ((criticalUnits * 18.0) + (warningUnits * 7.0) + (diversityUnits * 10.0)) /
+                       ((0.65 * projectFactor) + (0.35 * Math.Sqrt(klocFactor)));
+
+        var riskScore = 100.0 * (1.0 - Math.Exp(-pressure / 30.0));
+        return ClampScore(riskScore);
+    }
+
+    private static int CountTotalCodeLines(SolutionScanResult result)
+    {
+        var total = 0;
+        foreach (var filePath in result.Projects.SelectMany(project => project.SourceFiles).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                total += File.ReadLines(filePath).Count();
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return total;
     }
 
     private static bool IsWarningImpact(string impact)

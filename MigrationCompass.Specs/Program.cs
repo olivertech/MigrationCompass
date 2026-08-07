@@ -147,8 +147,8 @@ internal sealed class SpecSuite
         });
 
         result.Summary = ReportSummaryBuilder.Build(result);
-        AssertEqual(90, result.Summary.RiskScore, "Score de risco");
-        AssertTrue(result.Summary.Maintainability.Score > 0, "Score de manutenibilidade");
+        AssertTrue(result.Summary.RiskScore is >= 45 and <= 60, "Score de risco com saturacao gradual");
+        AssertTrue(result.Summary.Maintainability.Score > 0, "Score de fragilidade estrutural");
         AssertTrue(result.Summary.Maintainability.MigrationRisk.RawScore >= result.Summary.RiskScore - 1, "Componente risco de migracao");
         return Task.CompletedTask;
     }
@@ -326,6 +326,22 @@ internal sealed class SpecSuite
             SourceFiles = []
         });
 
+        result.EconomicExposureScenarios.Add(new EconomicExposureScenario
+        {
+            Title = "Sustentação operacional",
+            Summary = "Pressão recorrente sobre correções, sustentação e suporte ao legado.",
+            Signals = 3,
+            Range = new MonthlyCostRange { Min = 1200, Max = 2800 }
+        });
+
+        result.GeneratedArtifacts.Add(new GeneratedArtifactInfo
+        {
+            ProjectName = "Legacy.Web",
+            FilePath = "Legacy.generated.cs",
+            Category = "Código gerado",
+            Reason = "Arquivo com sufixo .generated.cs"
+        });
+
         result.ApiFindings.Add(new ApiFinding
         {
             ProjectName = "Legacy.Web",
@@ -352,7 +368,7 @@ internal sealed class SpecSuite
             FilePath = "Legacy.cs",
             Principle = "SRP",
             Severity = "Alto",
-            Confidence = "Alta",
+            Confidence = "Baixa",
             TargetName = "LegacyManager",
             Evidence = "Classe com muitas linhas.",
             Explanation = "HÃ¡ indÃ­cio de mÃºltiplas responsabilidades concentradas.",
@@ -366,7 +382,7 @@ internal sealed class SpecSuite
             FilePath = "Legacy.cs",
             Principle = "DIP",
             Severity = "Alto",
-            Confidence = "Alta",
+            Confidence = "Baixa",
             TargetName = "LegacyManager",
             Evidence = "Classe instancia dependencias concretas diretamente.",
             Explanation = "Ha indicio de alto acoplamento a implementacoes concretas.",
@@ -380,7 +396,7 @@ internal sealed class SpecSuite
             FilePath = "Legacy.cs",
             Principle = "OCP",
             Severity = "Alto",
-            Confidence = "Media",
+            Confidence = "Baixa",
             TargetName = "LegacyManager",
             Evidence = "Fluxo com decisoes extensas por condicao.",
             Explanation = "Ha indicio de baixa extensibilidade sem alterar codigo existente.",
@@ -403,20 +419,20 @@ internal sealed class SpecSuite
         });
 
         var html = new HtmlReportGenerator().Generate(result);
-        AssertTrue(html.Contains("RelatÃ³rio Executivo de MigraÃ§Ã£o para .NET 10", StringComparison.Ordinal), "Cabecalho");
-        AssertTrue(html.Contains("PontuaÃ§Ã£o de risco: 100/100", StringComparison.Ordinal), "Score");
-        AssertTrue(html.Contains("PontuaÃ§Ã£o estrutural de manutenibilidade", StringComparison.Ordinal), "Score de manutenibilidade");
-        AssertTrue(html.Contains("PontuaÃ§Ã£o Estrutural de Manutenibilidade", StringComparison.Ordinal), "Secao manutenibilidade");
-        AssertTrue(html.Contains("Legenda gerencial da pontuaÃ§Ã£o", StringComparison.Ordinal), "Legenda gerencial");
-        AssertTrue(html.Contains("85 a 100 - CrÃ­tica", StringComparison.Ordinal), "Faixa critica");
-        AssertTrue(html.Contains("CenÃ¡rio Recomendado para Esta Solution", StringComparison.Ordinal), "Cenario recomendado");
-        AssertTrue(html.Contains("Bloqueadores CrÃ­ticos", StringComparison.Ordinal), "Titulo executivo");
+        AssertTrue(html.Contains("Relatório Executivo de Migração para .NET 10", StringComparison.Ordinal), "Cabecalho");
+        AssertTrue(html.Contains("Pontuação de risco: 100/100", StringComparison.Ordinal), "Score");
+        AssertTrue(html.Contains("Índice de fragilidade estrutural", StringComparison.Ordinal), "Score de fragilidade");
+        AssertTrue(html.Contains("Índice de Fragilidade Estrutural", StringComparison.Ordinal), "Secao fragilidade");
+        AssertTrue(html.Contains("Legenda gerencial da fragilidade estrutural", StringComparison.Ordinal), "Legenda gerencial");
+        AssertTrue(html.Contains("85 a 100 - Crítica", StringComparison.Ordinal), "Faixa critica");
+        AssertTrue(html.Contains("Cenário com Maior Aderência aos Sinais Encontrados", StringComparison.Ordinal), "Cenario consultivo");
+        AssertTrue(html.Contains("Bloqueadores Críticos Relevantes", StringComparison.Ordinal), "Titulo executivo");
         AssertTrue(html.Contains("Leitura Gerencial", StringComparison.Ordinal), "Leitura gerencial");
-        AssertTrue(html.Contains("Caminhos EstratÃ©gicos PossÃ­veis", StringComparison.Ordinal), "Caminhos estrategicos");
-        AssertTrue(html.Contains("Base tÃ©cnica da leitura", StringComparison.Ordinal), "Base tecnica consultiva");
-        AssertTrue(html.Contains("Posicionamento recomendado", StringComparison.Ordinal), "Posicionamento recomendado");
+        AssertTrue(html.Contains("Caminhos Estratégicos Possíveis", StringComparison.Ordinal), "Caminhos estrategicos");
+        AssertTrue(html.Contains("Base técnica da leitura", StringComparison.Ordinal), "Base tecnica consultiva");
+        AssertTrue(html.Contains("Cenário com maior aderência aos sinais encontrados", StringComparison.Ordinal), "Posicionamento consultivo");
         AssertTrue(html.Contains("HttpContext.Current aumenta acoplamento", StringComparison.Ordinal), "Impacto de negocio");
-        AssertTrue(html.Contains("SOLID", StringComparison.Ordinal), "Secao solid");
+        AssertTrue(html.Contains("Sinais estruturais que merecem revisão", StringComparison.Ordinal), "Secao solid");
         AssertTrue(html.Contains("Legenda Executiva dos Princípios SOLID", StringComparison.Ordinal), "Legenda solid");
         AssertTrue(html.Contains("Single Responsibility Principle", StringComparison.Ordinal), "Definicao SRP");
         AssertTrue(html.Contains("Dependency Inversion Principle", StringComparison.Ordinal), "Definicao DIP");
@@ -425,8 +441,12 @@ internal sealed class SpecSuite
         AssertTrue(html.Contains("solid-badge-multi-4", StringComparison.Ordinal), "Badge multiplo principio");
         AssertTrue(html.Contains("solid-multi-4-row", StringComparison.Ordinal), "Classe visual nivel 4");
         AssertTrue(html.Contains("solid-multi-4-cell", StringComparison.Ordinal), "Borda visual nivel 4");
-        AssertTrue(html.Contains("Premissas EconÃ´micas", StringComparison.Ordinal), "Premissas");
+        AssertTrue(html.Contains("Exposição Econômica Orientativa por Cenário", StringComparison.Ordinal), "Secao economica agregada");
+        AssertTrue(html.Contains("Artefatos gerados ou de scaffolding identificados", StringComparison.Ordinal), "Secao artefatos");
+        AssertTrue(!html.Contains("Custo Estimado de Inação (Mensal)", StringComparison.Ordinal), "Remove custo individual por bloqueador");
+        AssertTrue(html.Contains("Premissas Econômicas", StringComparison.Ordinal), "Premissas");
         AssertTrue(html.Contains("Faixas orientativas para assessment inicial.", StringComparison.Ordinal), "Disclaimer");
+        AssertTrue(html.Contains("discovery técnico e de negócio", StringComparison.Ordinal), "Disclaimer executivo");
         return Task.CompletedTask;
     }
 
@@ -554,6 +574,19 @@ public class LegacyManager
         else if (kind == 5) { }
     }
 }
+
+public class DirectInstantiationOnly
+{
+    public void Build()
+    {
+        var a = new object();
+        var b = new object();
+        var c = new object();
+        var d = new object();
+        var e = new object();
+        var f = new object();
+    }
+}
 """;
 
             await File.WriteAllTextAsync(filePath, source);
@@ -573,6 +606,10 @@ public class LegacyManager
             AssertTrue(findings.Any(finding => finding.Principle == "ISP"), "ISP detectado");
             AssertTrue(findings.Any(finding => finding.Principle == "DIP"), "DIP detectado");
             AssertTrue(findings.Any(finding => finding.Principle == "OCP"), "OCP detectado");
+            var directInstantiationFinding = findings.Single(finding => finding.Principle == "DIP" && finding.TargetName == "DirectInstantiationOnly");
+            AssertTrue(!directInstantiationFinding.Evidence.Contains("0 parâmetro(s)", StringComparison.Ordinal), "Nao exibe construtor zerado");
+            AssertTrue(!directInstantiationFinding.Evidence.Contains("0 campo(s) de dependência", StringComparison.Ordinal), "Nao exibe dependencia zerada");
+            AssertTrue(directInstantiationFinding.Evidence.Contains("6 instanciação(ões) direta(s)", StringComparison.Ordinal), "Mantem evidencia relevante");
         }
         finally
         {

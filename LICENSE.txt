@@ -1,0 +1,11 @@
+MigrationCompass - uso restrito
+
+Este repositório não disponibiliza, neste momento, uma licença open source de redistribuição pública.
+
+Salvo autorização expressa do mantenedor:
+
+- não é permitida redistribuição pública
+- não é permitida sublicença
+- não é permitida exploração comercial por terceiros
+
+O conteúdo é fornecido para avaliação, colaboração controlada e uso restrito.

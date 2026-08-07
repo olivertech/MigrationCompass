@@ -85,7 +85,7 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "SRP",
                     Severity = classLineCount >= 700 || methodCount >= 25 ? "Alto" : "Medio",
-                    Confidence = "Alta",
+                    Confidence = "Baixa",
                     TargetName = className,
                     LineNumber = classLine,
                     Evidence = $"Classe com {classLineCount} linha(s) e {methodCount} método(s).",
@@ -102,10 +102,13 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "OCP",
                     Severity = switchCount >= 4 || elseIfCount >= 8 ? "Alto" : "Medio",
-                    Confidence = "Media",
+                    Confidence = "Baixa",
                     TargetName = className,
                     LineNumber = classLine,
-                    Evidence = $"Encontrado(s) {switchCount} bloco(s) switch e {elseIfCount} encadeamento(s) else-if.",
+                    Evidence = BuildJoinedEvidence(
+                        "Encontrado(s) ",
+                        switchCount > 0 ? $"{switchCount} bloco(s) switch" : null,
+                        elseIfCount > 0 ? $"{elseIfCount} encadeamento(s) else-if" : null),
                     Explanation = "Fluxos baseados em decisões por tipo ou condição extensa costumam exigir alteração frequente da classe sempre que um novo comportamento é introduzido.",
                     Recommendation = "Avaliar uso de polimorfismo, estratégias ou handlers especializados para reduzir modificação recorrente da mesma classe."
                 });
@@ -119,10 +122,14 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "DIP",
                     Severity = constructorParams >= 8 || newCount >= 10 ? "Alto" : "Medio",
-                    Confidence = "Alta",
+                    Confidence = "Baixa",
                     TargetName = className,
                     LineNumber = classLine,
-                    Evidence = $"Construtor com {constructorParams} parâmetro(s), {dependencyFields} campo(s) de dependência e {newCount} instanciação(ões) direta(s).",
+                    Evidence = BuildJoinedEvidence(
+                        string.Empty,
+                        constructorParams > 0 ? $"Construtor com {constructorParams} parâmetro(s)" : null,
+                        dependencyFields > 0 ? $"{dependencyFields} campo(s) de dependência" : null,
+                        newCount > 0 ? $"{newCount} instanciação(ões) direta(s)" : null),
                     Explanation = "Muitas dependências concretas ou criação direta de objetos dentro da classe sugerem acoplamento excessivo a detalhes de implementação.",
                     Recommendation = "Revisar fronteiras de dependência, abstrações e composição via DI para reduzir acoplamento e facilitar substituição."
                 });
@@ -151,7 +158,7 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "SRP",
                     Severity = lineCount >= 150 ? "Alto" : "Medio",
-                    Confidence = "Alta",
+                    Confidence = "Baixa",
                     TargetName = methodName,
                     LineNumber = methodLine,
                     Evidence = $"Método com aproximadamente {lineCount} linha(s).",
@@ -168,10 +175,13 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "DIP",
                     Severity = "Medio",
-                    Confidence = "Media",
+                    Confidence = "Baixa",
                     TargetName = methodName,
                     LineNumber = methodLine,
-                    Evidence = $"Método com {newCount} instanciação(ões) direta(s) e {switchCount} decisão(ões) por fluxo.",
+                    Evidence = BuildJoinedEvidence(
+                        string.Empty,
+                        newCount > 0 ? $"Método com {newCount} instanciação(ões) direta(s)" : null,
+                        switchCount > 0 ? $"{switchCount} decisão(ões) por fluxo" : null),
                     Explanation = "Métodos que instanciam muitos tipos concretos e controlam múltiplos fluxos tendem a ficar fortemente acoplados a detalhes e difíceis de substituir.",
                     Recommendation = "Avaliar extração de fábricas, estratégias ou adapters para reduzir dependência direta de implementações concretas."
                 });
@@ -197,7 +207,7 @@ public sealed class SolidScanner
                     FilePath = filePath,
                     Principle = "ISP",
                     Severity = memberCount >= 15 ? "Alto" : "Medio",
-                    Confidence = "Alta",
+                    Confidence = "Media",
                     TargetName = interfaceName,
                     LineNumber = interfaceLine,
                     Evidence = $"Interface com {memberCount} membro(s).",
@@ -250,6 +260,29 @@ public sealed class SolidScanner
         return parameters
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Count(part => !string.IsNullOrWhiteSpace(part));
+    }
+
+    private static string BuildJoinedEvidence(string prefix, params string?[] parts)
+    {
+        var relevantParts = parts
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToArray();
+
+        var content = string.Join(", ", relevantParts[..Math.Max(relevantParts.Length - 1, 0)]);
+        if (relevantParts.Length > 1)
+        {
+            content = string.IsNullOrWhiteSpace(content)
+                ? relevantParts[^1]!
+                : $"{content} e {relevantParts[^1]}";
+        }
+        else if (relevantParts.Length == 1)
+        {
+            content = relevantParts[0]!;
+        }
+
+        return string.IsNullOrWhiteSpace(prefix)
+            ? $"{content}."
+            : $"{prefix}{content}.";
     }
 
     private static string ExtractBlock(string content, int startIndex)
